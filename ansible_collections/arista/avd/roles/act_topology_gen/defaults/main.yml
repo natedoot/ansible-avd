@@ -1,0 +1,12 @@
+---
+# defaults file for act_topology_gen
+# Output directory
+root_dir: '{{ inventory_dir }}'
+lab_topology_dir_name: 'lab_topology'
+lab_topology_dir: '{{ root_dir }}/{{ lab_topology_dir_name }}'
+
+# vEOS Image to use
+veos_version: 4.28.0F
+
+# Default ACT configuration file generated
+act_configuration: '{{ lab_topology_dir }}/{{ fabric_name }}-act_inventory.yml'
