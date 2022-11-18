@@ -4,7 +4,25 @@ veos:
   username: {{ act_veos_username }}
   password: {{ act_veos_password }}
   version: {{ veos_version }}
+{% if act_add_ansible_node %}
 
+generic:
+  # Define global generic node parameters
+  username: {{ act_generic_user }}
+  password: {{ act_generic_password }}
+  version: {{ act_generic_os_version }}
+{% endif %}
+{% if act_add_cvp %}
+
+cvp:
+  # Define global cvp node parameters
+  username: {{ act_cvp_user }}
+  password: {{ act_cvp_password }}
+  version: {{ act_cvp_version }}
+  instance: {{ act_cvp_instance_type }}
+{% endif %}
+
+# List of ACT nodes
 nodes:
 {% for node in groups[fabric_name] | arista.avd.natural_sort %}
 {%     set node_hostvars = hostvars[node] %}
@@ -14,14 +32,33 @@ nodes:
       node_type: veos
       version: {{ veos_version }}
       neighbors:
+{#         Define neighbors based on ethernet_interfaces that contain a fabric node as peer #}
 {%         for ethernet_interface in node_hostvars.ethernet_interfaces | arista.avd.natural_sort %}
-{%              if node_hostvars.ethernet_interfaces[ethernet_interface].peer_type | arista.avd.default('undefined') in node_types + ['mlag_peer'] %}
+{%             if node_hostvars.ethernet_interfaces[ethernet_interface].peer_type | arista.avd.default('undefined') in node_types + ['mlag_peer'] %}
 {%                 set peer = node_hostvars.ethernet_interfaces[ethernet_interface].peer %}
 {%                 set peer_interface = node_hostvars.ethernet_interfaces[ethernet_interface].peer_interface %}
         - neighborDevice: {{ peer }}
           neighborPort: {{ peer_interface }}
           port: {{ ethernet_interface }}
-{%              endif %}
-{%          endfor %}
-{%      endif %}
+{%             endif %}
+{%         endfor %}
+{#         Define extra ports based on ethernet_interfaces that contain a non-fabric node as peer #}
+{%         set ports = [] %}
+{%         for ethernet_interface in node_hostvars.ethernet_interfaces | arista.avd.natural_sort %}
+{%             if node_hostvars.ethernet_interfaces[ethernet_interface].peer_type | arista.avd.default('undefined') not in node_types + ['mlag_peer'] %}
+{%                 do ports.append(ethernet_interface)%}
+{%             endif %}
+{%         endfor %}
+      {{ {"ports": ports} | to_nice_yaml | indent(8) }}
+{%     endif %}
 {% endfor %}
+{% if act_add_cvp %}
+  - cvp:
+      ip_addr: {{ act_cvp_ip }}
+      node_type: cvp
+{% endif %}
+{% if act_add_ansible_node %}
+  - ansible:
+      ip_addr: {{ act_ansible_node_ip }}
+      node_type: generic
+{% endif %}
