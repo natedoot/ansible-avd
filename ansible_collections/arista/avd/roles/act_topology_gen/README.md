@@ -69,3 +69,47 @@ Inserted into basic AVD fabric deployment playbook
       vars:
 
 ```
+```yaml
+---
+# example using non fabric nodes (i.e. servers/connected endpoints connected to fabric switch(es))
+- name: Build Switch configuration
+  hosts: branch_a_fabric
+  connection: local
+  gather_facts: false
+  collections:
+    - arista.avd
+
+  tasks:
+
+    - name: Generate AVD intended variables
+      import_role:
+        name: arista.avd.eos_designs
+
+    - name: Generate device intended config and documentation
+      import_role:
+        name: eos_cli_config_gen
+
+    - name: Build an ACT topolgy
+      import_role:
+        name: arista.avd.act_topology_gen
+      vars:
+    - name: Build ACT topology
+      ansible.builtin.import_role:
+        name: act_topology_gen
+      vars:
+        veos_version: 4.28.5.1M
+        act_cvp_version: "2022.3.0"
+        non_fabric_nodes:
+          - branch1-leaf1-server1:
+              ip_addr: 192.168.0.221
+              node_type: veos
+              version: 4.27.8.1M
+          - branch1-leaf2-server1:
+              ip_addr: 192.168.0.222
+              node_type: veos
+              version: 4.27.8.1M
+          - branch2-leaf1-server1:
+              ip_addr: 192.168.0.223
+              node_type: veos
+              version: 4.27.8.1M
+```
