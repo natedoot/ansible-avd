@@ -1,6 +1,0 @@
----
-- name: Run eve-api.py script for eve-ng
-  command: python3 "{{ role_path }}/files/eve-api.py
-  register: script_output
-  tags:
-    - eve-ng
