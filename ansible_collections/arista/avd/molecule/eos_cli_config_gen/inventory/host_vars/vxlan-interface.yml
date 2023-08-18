@@ -40,5 +40,6 @@ vxlan_interface:
         - 10.1.0.10
         - 10.1.0.11
       flood_vtep_learned_data_plane: true
+      multicsat_headend_replication: true
     eos_cli: |
         vxlan encapsulation ipv4
