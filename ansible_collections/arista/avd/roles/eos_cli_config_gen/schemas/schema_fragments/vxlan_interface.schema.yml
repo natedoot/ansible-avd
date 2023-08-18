@@ -118,6 +118,8 @@ keys:
                   description: Remote VTEP IP Address
               flood_vtep_learned_data_plane:
                 type: bool
+              multicsat_headend_replication:
+                type: bool
           eos_cli:
             type: str
             description: |

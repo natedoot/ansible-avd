@@ -21632,6 +21632,10 @@
                 "flood_vtep_learned_data_plane": {
                   "type": "boolean",
                   "title": "Flood Vtep Learned Data Plane"
+                },
+                "multicast_headend_replication": {
+                  "type": "boolean",
+                  "title": "Enables HER for all overlay multicast flows, across all tenant VRFs and EVPN VLANs"
                 }
               },
               "additionalProperties": false,
