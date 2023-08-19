@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -184,4 +187,4 @@ class MlagMixin:
 
     @cached_property
     def mlag_ibgp_peering_vrfs_base_vlan(self: SharedUtils) -> int:
-        return int(get(self.hostvars, "mlag_ibgp_peering_vrfs.base_vlan", required=True))
+        return int(get(self.hostvars, "mlag_ibgp_peering_vrfs.base_vlan", default=3000))

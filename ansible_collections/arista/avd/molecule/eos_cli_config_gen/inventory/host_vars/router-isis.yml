@@ -12,11 +12,6 @@ router_isis:
       delay: 15000
   advertise:
     passive_only: true
-  no_passive_interfaces:
-    - Ethernet1
-    - Ethernet2
-    - Vlan4093
-    - Loopback1
   address_family_ipv4:
     maximum_paths: 2
   segment_routing_mpls:
@@ -48,6 +43,7 @@ ethernet_interfaces:
     isis_network_point_to_point: true
     isis_circuit_type: level-1-2
   - name: Ethernet3
+    type: port-channel-member
     peer: EAPI-LEAF1B
     peer_interface: Ethernet3
     peer_type: mlag_peer
@@ -56,18 +52,21 @@ ethernet_interfaces:
       id: 3
       mode: active
   - name: Ethernet4
+    type: port-channel-member
     peer: DC1-LEAF1B
     peer_interface: Ethernet4
     channel_group:
       id: 4
       mode: active
   - name: Ethernet5
+    type: port-channel-member
     peer: DC1-LEAF1B
     peer_interface: Ethernet5
     channel_group:
       id: 5
       mode: active
   - name: Ethernet6
+    type: port-channel-member
     peer: DC1-LEAF1B
     peer_interface: Ethernet6
     channel_group:

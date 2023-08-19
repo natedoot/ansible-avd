@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 import ipaddress
@@ -47,6 +50,23 @@ class UtilsMixin(UtilsFilteredTenantsMixin):
         if not endpoint_vlans:
             return []
         return [int(id) for id in range_expand(endpoint_vlans)]
+
+    @cached_property
+    def _vrf_default_evpn(self) -> bool:
+        """
+        Return boolean telling if VRF "default" is running EVPN or not.
+        """
+        if not (self.shared_utils.network_services_l3 and self.shared_utils.overlay_vtep and self.shared_utils.overlay_evpn):
+            return False
+
+        for tenant in self._filtered_tenants:
+            if (vrf_default := get_item(tenant["vrfs"], "name", "default")) is None:
+                continue
+
+            if "evpn" in vrf_default.get("address_families", ["evpn"]):
+                return True
+
+        return False
 
     @cached_property
     def _vrf_default_ipv4_subnets(self) -> list[str]:
@@ -150,6 +170,15 @@ class UtilsMixin(UtilsFilteredTenantsMixin):
             vlan_id = base_vlan + int(vrf_id) - 1
 
         return vlan_id
+
+    def _mlag_ibgp_peering_redistribute(self, vrf, tenant) -> bool:
+        """
+        Returns True if MLAG IBGP Peering subnet should be redistributed for the given vrf/tenant.
+        False otherwise.
+
+        Does _not_ include checks if the peering is enabled at all, so that should be checked first.
+        """
+        return default(vrf.get("redistribute_mlag_ibgp_peering_vrfs"), tenant.get("redistribute_mlag_ibgp_peering_vrfs"), True) is True
 
     @cached_property
     def _configure_bgp_mlag_peer_group(self) -> bool:

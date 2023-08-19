@@ -1,7 +1,11 @@
-import copy
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from collections import ChainMap
+from copy import deepcopy
 
 from ansible_collections.arista.avd.plugins.plugin_utils.errors import AristaAvdError
+from ansible_collections.arista.avd.plugins.plugin_utils.merge import merge
 from ansible_collections.arista.avd.plugins.plugin_utils.schema.refresolver import create_refresolver
 from ansible_collections.arista.avd.plugins.plugin_utils.utils import get_all
 
@@ -75,7 +79,7 @@ def _keys_validator(validator, keys: dict, instance: dict, schema: dict):
     for key, childschema in keys.items():
         if key in instance and "$ref" in childschema:
             scope, resolved = validator.resolver.resolve(childschema["$ref"])
-            merged_childschema = copy.deepcopy(resolved)
+            merged_childschema = deepcopy(resolved)
             always_merger.merge(merged_childschema, childschema)
             merged_childschema.pop("$ref", None)
             keys[key] = merged_childschema
@@ -129,11 +133,18 @@ def _ref_validator(validator, ref, instance: dict, schema: dict):
     a check for $ref has been added to the other validators, to
     avoid duplicate validation (and duplicate errors)
     """
-    scope, resolved = validator.resolver.resolve(ref)
+    scope, ref_schema = validator.resolver.resolve(ref)
     validator.resolver.push_scope(scope)
-    merged_schema = copy.deepcopy(resolved)
-    always_merger.merge(merged_schema, schema)
-    merged_schema.pop("$ref", None)
+    schema = deepcopy(schema)
+    schema.pop("$ref", None)
+    merged_schema = merge(schema, ref_schema, same_key_strategy="use_existing", destructive_merge=False)
+
+    # Resolve new refs inherited from the first ref.
+    if "$ref" in merged_schema:
+        yield from _ref_validator(validator, merged_schema["$ref"], instance, merged_schema)
+        validator.resolver.pop_scope()
+        return
+
     try:
         yield from validator.descend(instance, merged_schema)
     finally:
@@ -200,7 +211,7 @@ class AvdValidator:
                     "list": jsonschema._types.is_array,
                     "int": jsonschema._types.is_integer,
                 }
-            )
+            ),
             # version="0.1",
         )
 

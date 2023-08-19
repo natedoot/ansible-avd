@@ -1,8 +1,9 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 """
 Encrypt / Decrypt filters
 """
-from __future__ import annotations
-
 from ansible_collections.arista.avd.plugins.plugin_utils.errors import AristaAvdError, AristaAvdMissingVariableError
 from ansible_collections.arista.avd.plugins.plugin_utils.password_utils import cbc_decrypt, cbc_encrypt
 
@@ -71,7 +72,7 @@ def ospf_simple_decrypt(password: str, key: str) -> str:
 OSPF_MESSAGE_DIGEST_HASH_ALGORITHMS = ["md5", "sha1", "sha256", "sha384", "sha512"]
 
 
-def ospf_message_digest_encrypt(password: str, key: str, hash_algorithm: str | None = None, key_id: str | None = None) -> str:
+def ospf_message_digest_encrypt(password: str, key: str, hash_algorithm: str = None, key_id: str = None) -> str:
     """
     Encrypt a password for Message Digest Keys
 
@@ -95,7 +96,7 @@ def ospf_message_digest_encrypt(password: str, key: str, hash_algorithm: str | N
     return cbc_encrypt(key_b, data).decode()
 
 
-def ospf_message_digest_decrypt(password: str, key: str, hash_algorithm: str | None = None, key_id: str | None = None) -> str:
+def ospf_message_digest_decrypt(password: str, key: str, hash_algorithm: str = None, key_id: str = None) -> str:
     """
     Decrypt a password for Message Digest Keys
 

@@ -151,6 +151,25 @@ vlan_interfaces:
         link_address: a0::7
       - address: a0::8
 
+  - name: Vlan50
+    description: IP NAT Testing
+    ip_nat:
+      destination:
+        dynamic:
+          - access_list: ACL1
+            pool_name: POOL1
+        static:
+          - original_ip: 1.0.0.1
+            translated_ip: 2.0.0.1
+      source:
+        dynamic:
+          - access_list: ACL2
+            pool_name: POOL2
+            nat_type: pool
+        static:
+          - original_ip: 3.0.0.1
+            translated_ip: 4.0.0.1
+
 # IPv6 SVI configuration
 
   - name: Vlan501
@@ -184,7 +203,8 @@ vlan_interfaces:
         valid_lifetime: infinite
         preferred_lifetime: infinite
         no_autoconfig_flag: true
-    ipv6_virtual_router_address: 1b11:3a00:22b0:6::1
+    ipv6_virtual_router_addresses:
+      - 1b11:3a00:22b0:6::1
 
   - name: Vlan25
     description: SVI Description
@@ -218,7 +238,8 @@ vlan_interfaces:
         valid_lifetime: infinite
         preferred_lifetime: infinite
         no_autoconfig_flag: true
-    ipv6_virtual_router_address: 1b11:3a00:22b0:1000::1
+    ipv6_virtual_router_addresses:
+      - 1b11:3a00:22b0:1000::1
     multicast:
       ipv4:
         static: true
@@ -237,6 +258,7 @@ vlan_interfaces:
     description: SVI Description
     shutdown: false
     ip_igmp: true
+    ip_igmp_version: 2
     ip_address_virtual: 10.10.144.3/20
     ipv6_address: 1b11:3a00:22b0:5200::15/64
     ipv6_nd_managed_config_flag: true
@@ -245,7 +267,8 @@ vlan_interfaces:
         valid_lifetime: infinite
         preferred_lifetime: infinite
         no_autoconfig_flag: true
-    ipv6_virtual_router_address: 1b11:3a00:22b0:5200::3
+    ipv6_virtual_router_addresses:
+      - 1b11:3a00:22b0:5200::3
     ip_helpers:
       - ip_helper: 10.10.96.101
         source_interface: Loopback0

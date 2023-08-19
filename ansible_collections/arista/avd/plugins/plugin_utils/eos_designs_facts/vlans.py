@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 import re
@@ -66,12 +69,17 @@ class VlansMixin:
     def _local_endpoint_vlans_and_trunk_groups(self: EosDesignsFacts) -> tuple[set, set]:
         """
         Return list of vlans and list of trunk groups used by connected_endpoints on this switch
+
+        Also includes the inband_management_vlan
         """
         if not (self.shared_utils.any_network_services and self.shared_utils.connected_endpoints):
             return set(), set()
 
         vlans = set()
         trunk_groups = set()
+
+        if self.shared_utils.configure_inband_mgmt:
+            vlans.add(self.shared_utils.inband_mgmt_vlan)
 
         for connected_endpoints_key in self.shared_utils.connected_endpoints_keys:
             connected_endpoints = convert_dicts(get(self._hostvars, connected_endpoints_key["key"], default=[]), "name")
@@ -170,6 +178,7 @@ class VlansMixin:
             return endpoint_vlans
 
         mlag_endpoint_vlans, mlag_endpoint_trunk_groups = self._mlag_peer_endpoint_vlans_and_trunk_groups
+
         return endpoint_vlans.union(mlag_endpoint_vlans)
 
     @cached_property
@@ -295,5 +304,6 @@ class VlansMixin:
                                 # Skip since the vlan is not in use
                                 continue
                             vlans.append(int(l2vlan["id"]))
+
             return vlans
         return []

@@ -1,10 +1,18 @@
+hostname: DC1-LEAF2A
 router_bgp:
   as: '65102'
   router_id: 192.168.255.10
   bgp_defaults:
-  - no bgp default ipv4-unicast
   - distance bgp 20 200 200
-  - maximum-paths 4 ecmp 4
+  bgp:
+    default:
+      ipv4_unicast: false
+  maximum_paths:
+    paths: 4
+    ecmp: 4
+  updates:
+    wait_for_convergence: true
+    wait_install: true
   peer_groups:
   - name: UNDERLAY-PEERS
     type: ipv4
@@ -186,6 +194,20 @@ router_bgp:
         - '100000:30'
     redistribute_routes:
     - source_protocol: connected
+  - name: '12345678'
+    router_id: 192.168.255.10
+    rd: '65001:41'
+    route_targets:
+      import:
+      - address_family: evpn
+        route_targets:
+        - '100000:41'
+      export:
+      - address_family: evpn
+        route_targets:
+        - '100000:41'
+    redistribute_routes:
+    - source_protocol: connected
   - name: Tenant_D_OP_Zone
     router_id: 192.168.255.10
     rd: '65001:40'
@@ -201,20 +223,6 @@ router_bgp:
     redistribute_routes:
     - source_protocol: connected
     - source_protocol: static
-  - name: Tenant_D_WAN_Zone
-    router_id: 192.168.255.10
-    rd: '65001:41'
-    route_targets:
-      import:
-      - address_family: evpn
-        route_targets:
-        - '100000:41'
-      export:
-      - address_family: evpn
-        route_targets:
-        - '100000:41'
-    redistribute_routes:
-    - source_protocol: connected
   vlan_aware_bundles:
   - name: Tenant_A_APP_Zone
     rd: '65001:12'
@@ -282,6 +290,14 @@ router_bgp:
     redistribute_routes:
     - learned
     vlan: 310-311
+  - name: '12345678'
+    rd: '65001:41'
+    route_targets:
+      both:
+      - '100000:41'
+    redistribute_routes:
+    - learned
+    vlan: 450-452
   - name: Tenant_D_OP_Zone
     rd: '65001:40'
     route_targets:
@@ -290,14 +306,6 @@ router_bgp:
     redistribute_routes:
     - learned
     vlan: 410-413
-  - name: Tenant_D_WAN_Zone
-    rd: '65001:41'
-    route_targets:
-      both:
-      - '100000:41'
-    redistribute_routes:
-    - learned
-    vlan: 450-452
 static_routes:
 - vrf: MGMT
   destination_address_prefix: 0.0.0.0/0
@@ -358,6 +366,9 @@ spanning_tree:
 local_users:
 - name: admin
   disabled: true
+  privilege: 15
+  role: network-admin
+  no_password: true
 - name: cvpadmin
   privilege: 15
   role: network-admin
@@ -389,11 +400,11 @@ vrfs:
 - name: Tenant_C_OP_Zone
   tenant: Tenant_C
   ip_routing: true
-- name: Tenant_D_OP_Zone
+- name: '12345678'
   tenant: Tenant_D
   ip_routing: true
   ipv6_routing: true
-- name: Tenant_D_WAN_Zone
+- name: Tenant_D_OP_Zone
   tenant: Tenant_D
   ip_routing: true
   ipv6_routing: true
@@ -424,7 +435,7 @@ ethernet_interfaces:
   description: DC1-L2LEAF1A_Ethernet1
   speed: forced 10000
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 7
     mode: active
@@ -435,7 +446,7 @@ ethernet_interfaces:
   description: DC1-L2LEAF1B_Ethernet1
   speed: forced 10000
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 7
     mode: active
@@ -445,7 +456,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: DC1-L2LEAF3A_Ethernet1
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 9
     mode: active
@@ -455,7 +466,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: DC1-L2LEAF4A_Ethernet1
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 13
     mode: active
@@ -465,7 +476,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: DC1.L2LEAF5A_Ethernet1
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 141
     mode: active
@@ -475,7 +486,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: DC1.L2LEAF5B_Ethernet1
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 141
     mode: active
@@ -575,80 +586,13 @@ ethernet_interfaces:
   vrf: Tenant_A_OSPF
   ospf_area: '0'
   ospf_network_point_to_point: true
-- name: Ethernet10
-  peer: server01_MLAG
-  peer_interface: Eth2
-  peer_type: server
-  port_profile: TENANT_B
-  description: server01_MLAG_Eth2
-  type: switched
-  shutdown: false
-  mode: trunk
-  vlans: 210-211
-  spanning_tree_bpdufilter: disabled
-  spanning_tree_bpduguard: disabled
-  channel_group:
-    id: 10
-    mode: active
-- name: Ethernet11
-  peer: server01_MTU_PROFILE_MLAG
-  peer_interface: Eth4
-  peer_type: server
-  port_profile: TENANT_A_MTU
-  description: server01_MTU_PROFILE_MLAG_Eth4
-  mtu: 1600
-  type: switched
-  shutdown: false
-  mode: access
-  vlans: '110'
-  spanning_tree_bpdufilter: enabled
-  spanning_tree_bpduguard: enabled
-  channel_group:
-    id: 11
-    mode: active
-- name: Ethernet12
-  peer: server01_MTU_ADAPTOR_MLAG
-  peer_interface: Eth6
-  peer_type: server
-  description: server01_MTU_ADAPTOR_MLAG_Eth6
-  mtu: 1601
-  type: switched
-  shutdown: false
-  spanning_tree_bpdufilter: 'True'
-  spanning_tree_bpduguard: 'True'
-  channel_group:
-    id: 12
-    mode: active
-- name: Ethernet20
-  peer: FIREWALL01
-  peer_interface: E0
-  peer_type: firewall
-  port_profile: TENANT_A_B
-  description: FIREWALL01_E0
-  type: switched
-  shutdown: false
-  mode: trunk
-  vlans: 110-111,210-211
-  channel_group:
-    id: 20
-    mode: active
-- name: Ethernet21
-  peer: ROUTER01
-  peer_interface: Eth0
-  peer_type: router
-  port_profile: TENANT_A
-  description: ROUTER01_Eth0
-  type: switched
-  shutdown: false
-  mode: access
-  vlans: '110'
 - name: Ethernet24
   peer: PC
   peer_type: network_port
   port_profile: DOT1X_PORT_PROFILE
   description: PC
-  type: switched
   shutdown: false
+  type: switched
   dot1x:
     port_control: auto
     reauthentication: true
@@ -671,8 +615,8 @@ ethernet_interfaces:
   peer_type: network_port
   port_profile: DOT1X_PORT_PROFILE
   description: PC
-  type: switched
   shutdown: false
+  type: switched
   dot1x:
     port_control: auto
     reauthentication: true
@@ -690,6 +634,59 @@ ethernet_interfaces:
       reauth_period: server
       tx_period: 3
     reauthorization_request_limit: 3
+- name: Ethernet10
+  peer: server01_MLAG
+  peer_interface: Eth2
+  peer_type: server
+  port_profile: TENANT_B
+  description: server01_MLAG_Eth2
+  shutdown: false
+  type: port-channel-member
+  channel_group:
+    id: 10
+    mode: active
+- name: Ethernet11
+  peer: server01_MTU_PROFILE_MLAG
+  peer_interface: Eth4
+  peer_type: server
+  port_profile: TENANT_A_MTU
+  description: server01_MTU_PROFILE_MLAG_Eth4
+  shutdown: false
+  type: port-channel-member
+  channel_group:
+    id: 11
+    mode: active
+- name: Ethernet12
+  peer: server01_MTU_ADAPTOR_MLAG
+  peer_interface: Eth6
+  peer_type: server
+  description: server01_MTU_ADAPTOR_MLAG_Eth6
+  shutdown: false
+  type: port-channel-member
+  channel_group:
+    id: 12
+    mode: active
+- name: Ethernet20
+  peer: FIREWALL01
+  peer_interface: E0
+  peer_type: firewall
+  port_profile: TENANT_A_B
+  description: FIREWALL01_E0
+  shutdown: false
+  type: port-channel-member
+  channel_group:
+    id: 20
+    mode: active
+- name: Ethernet21
+  peer: ROUTER01
+  peer_interface: Eth0
+  peer_type: router
+  port_profile: TENANT_A
+  description: ROUTER01_Eth0
+  shutdown: false
+  type: switched
+  mode: access
+  vlans: '110'
 port_channel_interfaces:
 - name: Port-Channel7
   description: DC1_L2LEAF1_Po1
@@ -840,6 +837,15 @@ vlans:
 - id: 311
   name: Tenant_C_OP_Zone_2
   tenant: Tenant_C
+- id: 450
+  name: Tenant_D_v6_WAN_Zone_1
+  tenant: Tenant_D
+- id: 451
+  name: Tenant_D_v6_WAN_Zone_2
+  tenant: Tenant_D
+- id: 452
+  name: Tenant_D_v6_WAN_Zone_3
+  tenant: Tenant_D
 - id: 410
   name: Tenant_D_v6_OP_Zone_1
   tenant: Tenant_D
@@ -852,20 +858,11 @@ vlans:
 - id: 413
   name: Tenant_D_v6_OP_Zone_3
   tenant: Tenant_D
-- id: 450
-  name: Tenant_D_v6_WAN_Zone_1
-  tenant: Tenant_D
-- id: 451
-  name: Tenant_D_v6_WAN_Zone_2
-  tenant: Tenant_D
-- id: 452
-  name: Tenant_D_v6_WAN_Zone_3
-  tenant: Tenant_D
 ip_igmp_snooping:
   globally_enabled: true
   vlans:
-  - enabled: false
-    id: 120
+  - id: 120
+    enabled: false
 ip_virtual_router_mac_address: 00:dc:00:00:00:0a
 vlan_interfaces:
 - name: Vlan130
@@ -991,12 +988,46 @@ vlan_interfaces:
   shutdown: false
   ip_address_virtual: 10.3.11.1/24
   vrf: Tenant_C_OP_Zone
+- name: Vlan450
+  tenant: Tenant_D
+  tags:
+  - v6wan
+  description: Tenant_D_v6_WAN_Zone_1
+  shutdown: false
+  ipv6_enable: true
+  ipv6_address_virtuals:
+  - 2001:db8:355::1/64
+  vrf: '12345678'
+- name: Vlan451
+  tenant: Tenant_D
+  tags:
+  - v6wan
+  description: Tenant_D_v6_WAN_Zone_2
+  shutdown: false
+  ipv6_enable: true
+  mtu: 1560
+  ipv6_address_virtuals:
+  - 2001:db8:451::1/64
+  vrf: '12345678'
+- name: Vlan452
+  tenant: Tenant_D
+  tags:
+  - v6wan
+  description: Tenant_D_v6_WAN_Zone_3
+  shutdown: false
+  ipv6_enable: false
+  mtu: 1560
+  ip_address_virtual: 10.4.12.254/24
+  ipv6_address_virtuals:
+  - 2001:db8:412::1/64
+  vrf: '12345678'
 - name: Vlan410
   tenant: Tenant_D
   tags:
   - v6opzone
   description: Tenant_D_v6_OP_Zone_1
   shutdown: false
+  ipv6_enable: true
   ip_address_virtual: 10.3.10.1/24
   ipv6_address_virtuals:
   - 2001:db8:310::1/64
@@ -1022,6 +1053,7 @@ vlan_interfaces:
   - v6opzone
   description: Tenant_D_v6_OP_Zone_1
   shutdown: false
+  ipv6_enable: false
   mtu: 1560
   ip_address_virtual: 10.4.12.254/24
   ipv6_address_virtuals:
@@ -1045,36 +1077,6 @@ vlan_interfaces:
   - ip_helper: 1.1.1.1
     source_interface: lo101
     vrf: TEST
-- name: Vlan450
-  tenant: Tenant_D
-  tags:
-  - v6wan
-  description: Tenant_D_v6_WAN_Zone_1
-  shutdown: false
-  ipv6_address_virtuals:
-  - 2001:db8:355::1/64
-  vrf: Tenant_D_WAN_Zone
-- name: Vlan451
-  tenant: Tenant_D
-  tags:
-  - v6wan
-  description: Tenant_D_v6_WAN_Zone_2
-  shutdown: false
-  mtu: 1560
-  ipv6_address_virtuals:
-  - 2001:db8:451::1/64
-  vrf: Tenant_D_WAN_Zone
-- name: Vlan452
-  tenant: Tenant_D
-  tags:
-  - v6wan
-  description: Tenant_D_v6_WAN_Zone_3
-  shutdown: false
-  mtu: 1560
-  ip_address_virtual: 10.4.12.254/24
-  ipv6_address_virtuals:
-  - 2001:db8:412::1/64
-  vrf: Tenant_D_WAN_Zone
 ipv6_static_routes:
 - destination_address_prefix: ::/0
   gateway: 2001:db8:311::4
@@ -1133,6 +1135,12 @@ vxlan_interface:
         vni: 30310
       - id: 311
         vni: 30311
+      - id: 450
+        vni: 40450
+      - id: 451
+        vni: 40451
+      - id: 452
+        vni: 40452
       - id: 410
         vni: 40410
       - id: 411
@@ -1141,12 +1149,6 @@ vxlan_interface:
         vni: 40412
       - id: 413
         vni: 40413
-      - id: 450
-        vni: 40450
-      - id: 451
-        vni: 40451
-      - id: 452
-        vni: 40452
       vrfs:
       - name: Tenant_A_APP_Zone
         vni: 12
@@ -1162,10 +1164,10 @@ vxlan_interface:
         vni: 20
       - name: Tenant_C_OP_Zone
         vni: 30
+      - name: '12345678'
+        vni: 41
       - name: Tenant_D_OP_Zone
         vni: 40
-      - name: Tenant_D_WAN_Zone
-        vni: 41
 virtual_source_nat_vrfs:
 - name: Tenant_A_OP_Zone
   ip_address: 10.255.1.10

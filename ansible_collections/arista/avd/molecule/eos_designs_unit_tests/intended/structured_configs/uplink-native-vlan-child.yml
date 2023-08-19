@@ -1,3 +1,4 @@
+hostname: uplink-native-vlan-child
 service_routing_protocols_model: multi-agent
 vlan_internal_order:
   allocation: ascending
@@ -12,9 +13,9 @@ management_api_http:
   - name: MGMT
   enable_https: true
 vlans:
-- name: NATIVE
+- id: 200
+  name: NATIVE
   state: suspend
-  id: 200
 - id: 100
   name: NETWORK_SERVICES_VLAN
   tenant: test
@@ -25,7 +26,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: UPLINK-NATIVE-VLAN-PARENT_Ethernet2
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 2
     mode: active

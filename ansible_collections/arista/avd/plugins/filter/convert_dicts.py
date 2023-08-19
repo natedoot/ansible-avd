@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 #
 # def arista.avd.convert_dicts
 #
@@ -61,9 +64,7 @@ def convert_dicts(dictionary, primary_key="name", secondary_key=None):
         output = []
         for element in dictionary:
             if not isinstance(element, dict):
-                item = {}
-                item.update({primary_key: element})
-                output.append(item)
+                output.append({primary_key: element})
             elif primary_key not in element and secondary_key is not None:
                 # if element of nested dictionary is a dictionary but primary key is missing, insert primary and secondary keys.
                 for key in element:
@@ -81,19 +82,24 @@ def convert_dicts(dictionary, primary_key="name", secondary_key=None):
         for key in dictionary:
             if secondary_key is not None:
                 # Add secondary key for the values if secondary key is provided
-                item = {}
-                item.update({primary_key: key})
-                item.update({secondary_key: dictionary[key]})
-                output.append(item)
+                output.append(
+                    {
+                        primary_key: key,
+                        secondary_key: dictionary[key],
+                    }
+                )
             else:
                 if not isinstance(dictionary[key], dict):
                     # Not a nested dictionary
                     output.append({primary_key: key})
                 else:
                     # Nested dictionary
-                    item = dictionary[key].copy()
-                    item.update({primary_key: key})
-                    output.append(item)
+                    output.append(
+                        {
+                            primary_key: key,
+                            **dictionary[key],
+                        }
+                    )
         return output
 
 

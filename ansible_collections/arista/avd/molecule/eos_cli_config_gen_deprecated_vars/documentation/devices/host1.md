@@ -7,7 +7,7 @@
   - [IP Name Servers](#ip-name-servers)
   - [Domain Lookup](#domain-lookup)
   - [Management SSH](#management-ssh)
-  - [Management API GNMI](#management-api-gnmi)
+  - [Management API gNMI](#management-api-gnmi)
   - [Management API HTTP](#management-api-http)
 - [Authentication](#authentication)
   - [Local Users](#local-users)
@@ -180,16 +180,16 @@ management ssh
       no shutdown
 ```
 
-### Management API GNMI
+### Management API gNMI
 
-#### Management API GNMI Summary
+#### Management API gNMI Summary
 
-| VRF with GNMI | OCTA |
+| VRF with gNMI | OCTA |
 | ------------- | ---- |
 | MGMT | enabled |
 | MONITORING | enabled |
 
-#### Management API gnmi configuration
+#### Management API gNMI configuration
 
 ```eos
 !
@@ -259,9 +259,9 @@ username admin privilege 15 role network-admin nopassword
 
 ```eos
 !
-radius-server host 10.10.10.157 vrf mgt key 7 071B245F5A
-radius-server host 10.10.10.249 key 7 071B245F5A
-radius-server host 10.10.10.158 key 7 071B245F5A
+radius-server host 10.10.10.157 vrf mgt key 7 <removed>
+radius-server host 10.10.10.249 key 7 <removed>
+radius-server host 10.10.10.158 key 7 <removed>
 ```
 
 ## Monitoring
@@ -272,7 +272,7 @@ radius-server host 10.10.10.158 key 7 071B245F5A
 
 | CV Compression | CloudVision Servers | VRF | Authentication | Smash Excludes | Ingest Exclude | Bypass AAA |
 | -------------- | ------------------- | --- | -------------- | -------------- | -------------- | ---------- |
-| gzip | 10.20.20.1:9910 | mgt | key,arista | - | - | False |
+| gzip | 10.20.20.1:9910 | mgt | key,<removed> | - | - | False |
 | gzip | 10.30.30.1:9910 | mgt | token,/tmp/tokenDC2 | - | - | False |
 
 #### TerminAttr Daemon Device Configuration
@@ -280,7 +280,7 @@ radius-server host 10.10.10.158 key 7 071B245F5A
 ```eos
 !
 daemon TerminAttr
-   exec /usr/bin/TerminAttr -cvopt DC1.addr=10.20.20.1:9910 -cvopt DC1.auth=key,arista -cvopt DC1.vrf=mgt -cvopt DC2.addr=10.30.30.1:9910 -cvopt DC2.auth=token,/tmp/tokenDC2 -cvopt DC2.vrf=mgt -taillogs
+   exec /usr/bin/TerminAttr -cvopt DC1.addr=10.20.20.1:9910 -cvopt DC1.auth=key,<removed> -cvopt DC1.vrf=mgt -cvopt DC2.addr=10.30.30.1:9910 -cvopt DC2.auth=token,/tmp/tokenDC2 -cvopt DC2.vrf=mgt -taillogs
    no shutdown
 ```
 
@@ -343,13 +343,19 @@ logging policy match match-list molecule discard
 | Loopback0 | default |
 | Loopback12 | Tenant_A_APP_Zone |
 
+#### SNMP Views Configuration
+
+| View | MIB Family Name | Status |
+| ---- | --------------- | ------ |
+| VW-WRITE | iso | Included |
+
 #### SNMP Communities
 
 | Community | Access | Access List IPv4 | Access List IPv6 | View |
 | --------- | ------ | ---------------- | ---------------- | ---- |
-| SNMP-COMMUNITY-1 | ro | onur | - | - |
-| SNMP-COMMUNITY-2 | rw | SNMP-MGMT | SNMP-MGMT | VW-READ |
-| SNMP-COMMUNITY-3 | ro | - | - | - |
+| <removed> | ro | onur | - | - |
+| <removed> | rw | SNMP-MGMT | SNMP-MGMT | VW-READ |
+| <removed> | ro | - | - | - |
 
 #### SNMP Device Configuration
 
@@ -358,9 +364,10 @@ logging policy match match-list molecule discard
 snmp-server vrf MGMT local-interface Management1
 snmp-server local-interface Loopback0
 snmp-server vrf Tenant_A_APP_Zone local-interface Loopback12
-snmp-server community SNMP-COMMUNITY-1 ro onur
-snmp-server community SNMP-COMMUNITY-2 view VW-READ rw ipv6 SNMP-MGMT SNMP-MGMT
-snmp-server community SNMP-COMMUNITY-3 ro
+snmp-server view VW-WRITE iso included
+snmp-server community <removed> ro onur
+snmp-server community <removed> view VW-READ rw ipv6 SNMP-MGMT SNMP-MGMT
+snmp-server community <removed> ro
 ```
 
 ### SFlow
@@ -598,9 +605,9 @@ interface Ethernet5
    ip ospf cost 99
    ip ospf network point-to-point
    ip ospf authentication message-digest
-   ip ospf authentication-key 7 asfddja23452
+   ip ospf authentication-key 7 <removed>
    ip ospf area 100
-   ip ospf message-digest-key 1 sha512 7 asfddja23452
+   ip ospf message-digest-key 1 sha512 7 <removed>
 !
 interface Ethernet26
    no switchport
@@ -633,11 +640,42 @@ interface Ethernet47
 
 | Interface | Description | Type | Mode | VLANs | Native VLAN | Trunk Group | LACP Fallback Timeout | LACP Fallback Mode | MLAG ID | EVPN ESI |
 | --------- | ----------- | ---- | ---- | ----- | ----------- | ------------| --------------------- | ------------------ | ------- | -------- |
+| Port-Channel1 | SRV01_bond0 | switched | trunk | 2-3000 | - | - | - | - | - | 0000:0000:0404:0404:0303 |
 | Port-Channel51 | ipv6_prefix | switched | trunk | 1-500 | - | - | - | - | - | - |
+
+##### Flexible Encapsulation Interfaces
+
+| Interface | Description | Type | Vlan ID | Client Unmatched | Client Dot1q VLAN | Client Dot1q Outer Tag | Client Dot1q Inner Tag | Network Retain Client Encapsulation | Network Dot1q VLAN | Network Dot1q Outer Tag | Network Dot1q Inner Tag |
+| --------- | ----------- | ---- | ------- | -----------------| ----------------- | ---------------------- | ---------------------- | ----------------------------------- | ------------------ | ----------------------- | ----------------------- |
+| Port-Channel2.1000 | L2 Subinterface | l2dot1q | 1000 | False | 100 | - | - | True | - | - | - |
 
 #### Port-Channel Interfaces Device Configuration
 
 ```eos
+!
+interface Port-Channel1
+   description SRV01_bond0
+   switchport
+   switchport trunk allowed vlan 2-3000
+   switchport mode trunk
+   evpn ethernet-segment
+      identifier 0000:0000:0404:0404:0303
+      route-target import 04:04:03:03:02:02
+   lacp system-id 0303.0202.0101
+!
+interface Port-Channel2
+   description Flexencap Port-Channel
+   no switchport
+!
+interface Port-Channel2.1000
+   description L2 Subinterface
+   vlan id 1000
+   encapsulation vlan
+      client dot1q 100 network client
+   evpn ethernet-segment
+      identifier 0000:0000:0303:0202:0101
+      route-target import 03:03:02:02:01:01
+   lacp system-id 0303.0202.0101
 !
 interface Port-Channel51
    description ipv6_prefix
@@ -737,6 +775,7 @@ interface Tunnel4
 | --------- | ----------- | --- | ---- | -------- |
 | Vlan1 | test ipv6_address_virtual | default | - | - |
 | Vlan2 | test ipv6_address_virtual and ipv6_address_virtuals | default | - | - |
+| Vlan3 | test ipv6_address_virtual | default | - | - |
 | Vlan42 | SVI Description | default | - | False |
 
 ##### IPv4
@@ -745,6 +784,7 @@ interface Tunnel4
 | --------- | --- | ---------- | ------------------ | ------------------------- | ---- | ------ | ------- |
 | Vlan1 |  default  |  -  |  -  |  -  |  -  |  -  |  -  |
 | Vlan2 |  default  |  -  |  -  |  -  |  -  |  -  |  -  |
+| Vlan3 |  default  |  -  |  -  |  -  |  -  |  -  |  -  |
 | Vlan42 |  default  |  -  |  10.10.42.1/24  |  -  |  -  |  -  |  -  |
 
 ##### IPv6
@@ -753,6 +793,7 @@ interface Tunnel4
 | --------- | --- | ------------ | -------------------- | ---------------------- | ---- | -------------- | ------------------- | ----------- | ------------ |
 | Vlan1 | default | - | fc00:10:10:1::1/64 | - | - | - | - | - | - |
 | Vlan2 | default | 1b11:3a00:22b0:5200::15/64 | fc00:10:10:2::1/64, fc00:10:11:2::1/64, fc00:10:12:2::1/64 | - | - | - | True | - | - |
+| Vlan3 | default | 1b11:3a00:22b3:5200::15/64 | - | fc00:10:10:3::1/64 | - | - | - | - | - |
 
 #### VLAN Interfaces Device Configuration
 
@@ -772,6 +813,12 @@ interface Vlan2
    ipv6 address virtual fc00:10:12:2::1/64
    ipv6 nd managed-config-flag
    ipv6 nd prefix 1b11:3a00:22b0:5200::/64 infinite infinite no-autoconfig
+!
+interface Vlan3
+   description test ipv6_address_virtual
+   ipv6 enable
+   ipv6 address 1b11:3a00:22b3:5200::15/64
+   ipv6 virtual-router address fc00:10:10:3::1/64
 !
 interface Vlan42
    description SVI Description
@@ -950,6 +997,7 @@ router isis EVPN_UNDERLAY
 | -------- | ----- |
 | Address Family | evpn |
 | Remote AS | 65001 |
+| Listen range prefix | 10.10.10.0/24 |
 | Source | Loopback0 |
 
 #### BGP Neighbors
@@ -1034,6 +1082,7 @@ router isis EVPN_UNDERLAY
 !
 router bgp 65101
    router-id 192.168.255.3
+   bgp listen range 10.10.10.0/24 peer-group EVPN-OVERLAY-PEERS peer-filter myfilter
    neighbor EVPN-OVERLAY-PEERS peer group
    neighbor EVPN-OVERLAY-PEERS remote-as 65001
    neighbor EVPN-OVERLAY-PEERS update-source Loopback0
@@ -1061,6 +1110,7 @@ router bgp 65101
       neighbor EVPN-OVERLAY-PEERS activate
    !
    address-family ipv4
+      neighbor EVPN-OVERLAY-PEERS next-hop address-family ipv6 originate
       neighbor EVPN-OVERLAY-PEERS activate
       neighbor 192.0.2.1 prefix-list PL-FOO-v4-IN in
       neighbor 192.0.2.1 prefix-list PL-FOO-v4-OUT out
@@ -1524,9 +1574,9 @@ Settings:
 
 Keys:
 
-| Key ID | Encrypted (Type 7) Key | Fallback |
-| ------ | ---------------------- | -------- |
-| 1234b | 12485744465E5A53 | - |
+| Key ID | Fallback |
+| ------ |  -------- |
+| 1234b | - |
 
 ### MACsec Device Configuration
 
@@ -1539,7 +1589,7 @@ mac security
    profile A1
       sci
    profile A2
-      key 1234b 7 12485744465E5A53
+      key 1234b 7 <removed>
 ```
 
 ### Traffic Policies information
@@ -1672,11 +1722,11 @@ QOS Profile: **test**
 
 **TX Queues**
 
-| TX queue | Type | Bandwidth | Priority | Shape Rate |
-| -------- | ---- | --------- | -------- | ---------- |
-| 1 | All | 50 | no priority | - |
-| 2 | Unicast | 50 | no priority | - |
-| 3 | Multicast | 50 | no priority | - |
+| TX queue | Type | Bandwidth | Priority | Shape Rate | Comment |
+| -------- | ---- | --------- | -------- | ---------- | ------- |
+| 1 | All | 50 | no priority | - | - |
+| 2 | Unicast | 50 | no priority | - | - |
+| 3 | Multicast | 50 | no priority | - | - |
 
 #### QOS Profile Device Configuration
 

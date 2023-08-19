@@ -1,24 +1,23 @@
 port_profiles:
-  TENANT_A_B:
+  - profile: TENANT_A_B
     mode: trunk
     vlans: "110-111,210-211"
 
-  TENANT_A:
+  - profile: TENANT_A
     mode: access
     vlans: "110"
 
-  TENANT_A_MTU:
+  - profile: TENANT_A_MTU
     mode: access
     vlans: "110"
     mtu: 1600
 
-  TENANT_B:
+  - profile: TENANT_B
     mode: trunk
     vlans: "210-211"
 
-  ALL_WITH_SECURITY:
+  - profile: ALL_WITH_SECURITY
     parent_profile: NON_EXISTING_PROFILE #Test that pointing to a nonexisting profile won't break templates.
-    endpoint_ports: [ Eth1, Eth2 ]
     mode: trunk
     vlans: "1-4094"
     spanning_tree_bpdufilter: disabled
@@ -27,19 +26,19 @@ port_profiles:
     l2_mtu: 8000
     storm_control:
       all:
-        level: 10
+        level: 10.0
         unit: percent
       broadcast:
-        level: 100
+        level: 100.0
         unit: pps
       multicast:
-        level: 1
+        level: 1.5
         unit: percent
       unknown_unicast:
-        level: 2
+        level: 2.8
         unit: percent
 
-  ALL_WITH_SECURITY_PORT_CHANNEL:
+  - profile: ALL_WITH_SECURITY_PORT_CHANNEL
     mode: trunk
     vlans: "1-4094"
     spanning_tree_bpdufilter: enabled
@@ -63,7 +62,7 @@ port_profiles:
       description: ALL_WITH_SECURITY_PORT_CHANNEL
       mode: active
 
-  ALL_WITH_SECURITY_PORT_CHANNEL_LACP_FALLBACK:
+  - profile: ALL_WITH_SECURITY_PORT_CHANNEL_LACP_FALLBACK
     mode: trunk
     vlans: "1-4094"
     spanning_tree_bpdufilter: true
@@ -90,13 +89,33 @@ port_profiles:
         mode: static
         timeout: 10
 
-  NESTED_PORT_PROFILE:
+  - profile: PORT_CHANNEL_LACP_TIMER
+    mode: trunk
+    vlans: "1-4094"
+    port_channel:
+      description: PORT_CHANNEL_LACP_MODE
+      mode: active
+      lacp_timer:
+        mode: fast
+        multiplier: 10
+
+  - profile: PORT_CHANNEL_LACP_TIMER_NORMAL
+    mode: trunk
+    vlans: "1-4094"
+    port_channel:
+      description: PORT_CHANNEL_LACP_MODE_NORMAL
+      mode: active
+      lacp_timer:
+        mode: normal
+        multiplier: 100
+
+  - profile: NESTED_PORT_PROFILE
     parent_profile: ALL_WITH_SECURITY_PORT_CHANNEL_LACP_FALLBACK
     port_channel:
       description: NESTED_ALL_WITH_SECURITY_PORT_CHANNEL
       mode: active
 
-  DOT1X_PORT_PROFILE:
+  - profile: DOT1X_PORT_PROFILE
     dot1x:
       port_control: auto
       reauthentication: true
@@ -116,7 +135,7 @@ port_profiles:
       reauthorization_request_limit: 3
 
 servers:
-  server01_MLAG:
+  - name: server01_MLAG
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth2, Eth3 ]
@@ -129,7 +148,7 @@ servers:
         spanning_tree_bpdufilter: disabled
         spanning_tree_bpduguard: disabled
 
-  server01_MTU_PROFILE_MLAG:
+  - name: server01_MTU_PROFILE_MLAG
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth4, Eth5 ]
@@ -142,7 +161,7 @@ servers:
         spanning_tree_bpdufilter: enabled
         spanning_tree_bpduguard: enabled
 
-  server01_MTU_ADAPTOR_MLAG:
+  - name: server01_MTU_ADAPTOR_MLAG
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth6, Eth7 ]
@@ -155,7 +174,7 @@ servers:
         spanning_tree_bpdufilter: true
         spanning_tree_bpduguard: true
 
-  server02_SINGLE_NODE_TRUNK:
+  - name: server02_SINGLE_NODE_TRUNK
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth1 ]
@@ -165,7 +184,7 @@ servers:
         spanning_tree_bpdufilter: false
         spanning_tree_bpduguard: false
 
-  server02_SINGLE_NODE:
+  - name: server02_SINGLE_NODE
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth1 ]
@@ -173,26 +192,28 @@ servers:
         switches: [ DC1-LEAF1A ]
         profile: TENANT_A
 
-  server03_ESI:
+  - name: server03_ESI
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
         switch_ports: [ Ethernet10, Ethernet10 ]
         switches: [ DC1-SVC3A, DC1-SVC4A ]
         profile: TENANT_A_B
+        ethernet_segment:
+          short_esi: '0303:0202:0101'
         port_channel:
           description: PortChanne1
           mode: active
-          short_esi: '0303:0202:0101'
 
-  server04_inherit_all_from_profile:
+  - name: server04_inherit_all_from_profile
     rack: RackC
     adapters:
       - switch_ports: [ Ethernet11, Ethernet11 ]
+        endpoint_ports: [ Eth1, Eth2 ]
         switches: [ DC1-SVC3A, DC1-SVC3B ]
         profile: ALL_WITH_SECURITY
 
-  server05_no_profile:
+  - name: server05_no_profile
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -217,7 +238,7 @@ servers:
             level: 2
             unit: percent
 
-  server06_override_profile:
+  - name: server06_override_profile
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -243,7 +264,7 @@ servers:
             level: 2
             unit: percent
 
-  server07_inherit_all_from_profile_port_channel:
+  - name: server07_inherit_all_from_profile_port_channel
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -251,7 +272,7 @@ servers:
         switches: [ DC1-SVC3A, DC1-SVC3B ]
         profile: ALL_WITH_SECURITY_PORT_CHANNEL
 
-  server08_no_profile_port_channel:
+  - name: server08_no_profile_port_channel
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -279,7 +300,7 @@ servers:
           description: server08_no_profile_port_channel
           mode: 'on'
 
-  server09_override_profile_no_port_channel:
+  - name: server09_override_profile_no_port_channel
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -306,7 +327,7 @@ servers:
             unit: percent
         port_channel: null   #Setting to null, to override port-channel inherited from profile
 
-  server10_no_profile_port_channel_lacp_fallback:
+  - name: server10_no_profile_port_channel_lacp_fallback
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -336,7 +357,7 @@ servers:
           lacp_fallback:
             mode: static
 
-  server11_inherit_profile_port_channel_lacp_fallback:
+  - name: server11_inherit_profile_port_channel_lacp_fallback
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -344,7 +365,7 @@ servers:
         switches: [ DC1-SVC3A, DC1-SVC3B ]
         profile: ALL_WITH_SECURITY_PORT_CHANNEL_LACP_FALLBACK
 
-  server12_inherit_nested_profile_port_channel_lacp_fallback:
+  - name: server12_inherit_nested_profile_port_channel_lacp_fallback
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -352,7 +373,7 @@ servers:
         switches: [ DC1-SVC3A, DC1-SVC3B ]
         profile: NESTED_PORT_PROFILE
 
-  server13_disabled_interfaces:
+  - name: server13_disabled_interfaces
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -361,7 +382,7 @@ servers:
         profile: TENANT_A
         enabled: false
 
-  server14_explicitly_enabled_interfaces:
+  - name: server14_explicitly_enabled_interfaces
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -370,7 +391,7 @@ servers:
         profile: TENANT_A
         enabled: true
 
-  server15_port_channel_with_disabled_phy_interfaces:
+  - name: server15_port_channel_with_disabled_phy_interfaces
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -383,7 +404,7 @@ servers:
           mode: active
           enabled: true
 
-  server16_port_channel_with_disabled_port_channel:
+  - name: server16_port_channel_with_disabled_port_channel
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -395,7 +416,7 @@ servers:
           mode: active
           enabled: false
 
-  server17_port_channel_with_disabled_phy_and_po_interfaces:
+  - name: server17_port_channel_with_disabled_phy_and_po_interfaces
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -408,7 +429,7 @@ servers:
           mode: active
           enabled: false
 
-  server18_monitoring_session_source_phys_interfaces:
+  - name: server18_monitoring_session_source_phys_interfaces
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -429,7 +450,7 @@ servers:
             source_settings:
               direction: tx
 
-  server18_monitoring_session_source_po:
+  - name: server18_monitoring_session_source_po
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth3, Eth4 ]
@@ -451,7 +472,7 @@ servers:
                 name: MyMacACL
                 priority: 5
 
-  server18_monitoring_session_source_phys_interface:
+  - name: server18_monitoring_session_source_phys_interface
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth5 ]
@@ -469,7 +490,7 @@ servers:
                 name: MyMacACL
                 priority: 5
 
-  server19_monitoring_session_destination_phys:
+  - name: server19_monitoring_session_destination_phys
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -491,7 +512,7 @@ servers:
                 enabled: true
                 size: 20
 
-  server20_monitoring_session_destination_phys:
+  - name: server20_monitoring_session_destination_phys
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1 ]
@@ -513,7 +534,7 @@ servers:
                 enabled: true
                 size: 20
 
-  server21_monitoring_session_destination_po:
+  - name: server21_monitoring_session_destination_po
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -529,7 +550,7 @@ servers:
           - name: MonitoringSessionServer18WithDest
             role: destination
 
-  server22_port_channel_with_custom_id:
+  - name: server22_port_channel_with_custom_id
     rack: RackC
     adapters:
       - endpoint_ports: [ Eth1, Eth2 ]
@@ -542,7 +563,7 @@ servers:
           enabled: true
           channel_id: 1291
 
-  server23_phone:
+  - name: server23_phone
     rack: RackC
     adapters:
       - endpoint_ports: [ int_1 ]
@@ -552,8 +573,56 @@ servers:
         mode: trunk phone
         enabled: true
 
+  - name: server24_port_channel_lacp_timer_profile
+    rack: RackC
+    adapters:
+      - endpoint_ports: [ Eth1, Eth2 ]
+        switch_ports: [ Ethernet31, Ethernet31 ]
+        switches: [ DC1-SVC3A, DC1-SVC3B ]
+        profile: PORT_CHANNEL_LACP_TIMER
+        port_channel:
+          description: server24_port_channel_with_lacp_timer
+
+  - name: server25_port_channel_lacp_timer
+    rack: RackC
+    adapters:
+      - endpoint_ports: [ Eth1, Eth2 ]
+        switch_ports: [ Ethernet32, Ethernet32 ]
+        switches: [ DC1-SVC3A, DC1-SVC3B ]
+        port_channel:
+          description: server25_port_channel_with_lacp_timer
+          mode: active
+          enabled: true
+          lacp_timer:
+            mode: fast
+            multiplier: 5
+
+  - name: server26_port_channel_lacp_timer_profile
+    rack: RackC
+    adapters:
+      - endpoint_ports: [ Eth1, Eth2 ]
+        switch_ports: [ Ethernet33, Ethernet33 ]
+        switches: [ DC1-SVC3A, DC1-SVC3B ]
+        profile: PORT_CHANNEL_LACP_TIMER_NORMAL
+        port_channel:
+          description: server26_port_channel_with_lacp_timer
+
+  - name: server27_port_channel_lacp_timer
+    rack: RackC
+    adapters:
+      - endpoint_ports: [ Eth1, Eth2 ]
+        switch_ports: [ Ethernet34, Ethernet34 ]
+        switches: [ DC1-SVC3A, DC1-SVC3B ]
+        port_channel:
+          description: server27_port_channel_with_lacp_timer
+          mode: active
+          enabled: true
+          lacp_timer:
+            mode: normal
+            multiplier: 50
+
 firewalls:
-  FIREWALL01:
+  - name: FIREWALL01
     rack: RackB
     adapters:
       - endpoint_ports: [ E0, E1 ]
@@ -566,7 +635,7 @@ firewalls:
 
 
 routers:
-  ROUTER01:
+  - name: ROUTER01
     rack: RackB
     adapters:
       - endpoint_ports: [ Eth0, Eth1 ]

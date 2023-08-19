@@ -12,11 +12,6 @@ router_isis:
       delay: 15000
   advertise:
     passive_only: true
-  no_passive_interfaces:
-    - Ethernet1
-    - Ethernet2
-    - Vlan4093
-    - Loopback1
   redistribute_routes:
     - source_protocol: static
       include_leaked: True
@@ -82,6 +77,7 @@ ethernet_interfaces:
     isis_metric: 50
     isis_network_point_to_point: true
   - name: Ethernet3
+    type: port-channel-member
     peer: EAPI-LEAF1B
     peer_interface: Ethernet3
     peer_type: mlag_peer

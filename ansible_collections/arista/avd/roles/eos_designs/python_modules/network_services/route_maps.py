@@ -1,6 +1,11 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
+
+from ansible_collections.arista.avd.plugins.plugin_utils.utils import append_if_not_duplicate
 
 from .utils import UtilsMixin
 
@@ -19,6 +24,7 @@ class RouteMapsMixin(UtilsMixin):
         Contains two parts.
         - Route-maps for tenant bgp peers set_ipv4_next_hop parameter
         - Route-maps for EVPN services in VRF "default" (using _route_maps_default_vrf)
+        - Route-map for tenant redistribute connected if any VRF is not redistributing MLAG peer subnet
         """
         if not self.shared_utils.network_services_l3:
             return None
@@ -41,24 +47,32 @@ class RouteMapsMixin(UtilsMixin):
                     else:
                         set_action = f"ipv6 next-hop {ipv6_next_hop}"
 
-                    route_maps.append(
-                        {
-                            "name": route_map_name,
-                            "sequence_numbers": [
-                                {
-                                    "sequence": 10,
-                                    "type": "permit",
-                                    "set": [set_action],
-                                },
-                            ],
-                        }
+                    route_map = {
+                        "name": route_map_name,
+                        "sequence_numbers": [
+                            {
+                                "sequence": 10,
+                                "type": "permit",
+                                "set": [set_action],
+                            },
+                        ],
+                    }
+                    append_if_not_duplicate(
+                        list_of_dicts=route_maps,
+                        primary_key="name",
+                        new_dict=route_map,
+                        context="Route-Maps",
+                        context_keys=["name"],
                     )
 
-            if (route_maps_vrf_default := self._route_maps_vrf_default) is not None:
-                route_maps.extend(route_maps_vrf_default)
+        if (route_maps_vrf_default := self._route_maps_vrf_default) is not None:
+            route_maps.extend(route_maps_vrf_default)
 
         if self._configure_bgp_mlag_peer_group and self.shared_utils.mlag_ibgp_origin_incomplete:
             route_maps.append(self._bgp_mlag_peer_group_route_map())
+
+        if self._mlag_ibgp_peering_subnets_without_redistribution:
+            route_maps.append(self._connected_to_bgp_vrfs_route_map())
 
         if route_maps:
             return route_maps
@@ -72,7 +86,7 @@ class RouteMapsMixin(UtilsMixin):
 
         Called from main route_maps function
         """
-        if not (self.shared_utils.overlay_vtep and self.shared_utils.overlay_evpn):
+        if not self._vrf_default_evpn:
             return None
 
         subnets = self._vrf_default_ipv4_subnets
@@ -147,7 +161,7 @@ class RouteMapsMixin(UtilsMixin):
 
         return [vrf_default, peers_out, bgp]
 
-    def _bgp_mlag_peer_group_route_map(self):
+    def _bgp_mlag_peer_group_route_map(self) -> dict:
         """
         Return dict with one route-map
         Origin Incomplete for MLAG iBGP learned routes
@@ -163,5 +177,25 @@ class RouteMapsMixin(UtilsMixin):
                     "set": ["origin incomplete"],
                     "description": "Make routes learned over MLAG Peer-link less preferred on spines to ensure optimal routing",
                 }
+            ],
+        }
+
+    def _connected_to_bgp_vrfs_route_map(self) -> dict:
+        """
+        Return dict with one route-map
+        Filter MLAG peer subnets for redistribute connected for overlay VRFs
+        """
+        return {
+            "name": "RM-CONN-2-BGP-VRFS",
+            "sequence_numbers": [
+                {
+                    "sequence": 10,
+                    "type": "deny",
+                    "match": ["ip address prefix-list PL-MLAG-PEER-VRFS"],
+                },
+                {
+                    "sequence": 20,
+                    "type": "permit",
+                },
             ],
         }

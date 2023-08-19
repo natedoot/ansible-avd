@@ -4,8 +4,6 @@
 type: dict
 keys:
   ipv6_access_lists:
-    documentation_options:
-      filename: data_model/ACLs
     type: list
     primary_key: name
     convert_types:
@@ -16,7 +14,6 @@ keys:
       keys:
         name:
           type: str
-          required: true
           description: IPv6 Access-list Name
         counters_per_entry:
           type: bool
@@ -31,7 +28,6 @@ keys:
             keys:
               sequence:
                 type: int
-                required: true
                 description: Sequence ID
                 convert_types:
                 - str

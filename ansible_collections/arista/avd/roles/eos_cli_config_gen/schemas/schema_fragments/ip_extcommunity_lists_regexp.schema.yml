@@ -4,8 +4,6 @@
 type: dict
 keys:
   ip_extcommunity_lists_regexp:
-    documentation_options:
-      filename: data_model/Filters
     type: list
     primary_key: name
     secondary_key: entries
@@ -17,7 +15,6 @@ keys:
       keys:
         name:
           type: str
-          required: true
           description: Community-list Name
         entries:
           type: list

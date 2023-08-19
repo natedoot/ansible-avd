@@ -5,8 +5,6 @@ type: dict
 allow_other_keys: true
 keys:
   maintenance:
-    documentation_options:
-      filename: data_model/Maintenance Mode
     type: dict
     display_name: Maintenance Mode
     keys:
@@ -32,7 +30,6 @@ keys:
           keys:
             name:
               type: str
-              required: true
             rate_monitoring:
               type: dict
               keys:
@@ -67,7 +64,6 @@ keys:
           keys:
             name:
               type: str
-              required: true
               description: BGP Profile Name
             initiator:
               type: dict
@@ -85,7 +81,6 @@ keys:
           keys:
             name:
               type: str
-              required: true
               description: Unit Profile Name
             on_boot:
               type: dict
@@ -108,7 +103,6 @@ keys:
           keys:
             name:
               type: str
-              required: true
               description: Unit Name
             quiesce:
               type: bool

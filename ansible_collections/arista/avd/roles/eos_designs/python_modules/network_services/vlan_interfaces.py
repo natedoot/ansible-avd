@@ -1,10 +1,13 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
 
 from ansible_collections.arista.avd.plugins.filter.convert_dicts import convert_dicts
 from ansible_collections.arista.avd.plugins.plugin_utils.errors import AristaAvdMissingVariableError
-from ansible_collections.arista.avd.plugins.plugin_utils.utils import default, get
+from ansible_collections.arista.avd.plugins.plugin_utils.utils import append_if_not_duplicate, default, get
 
 from .utils import UtilsMixin
 
@@ -30,22 +33,37 @@ class VlanInterfacesMixin(UtilsMixin):
         for tenant in self._filtered_tenants:
             for vrf in tenant["vrfs"]:
                 for svi in vrf["svis"]:
-                    vlan_id = int(svi["id"])
-                    vlan_interfaces.append({"name": f"Vlan{vlan_id}", **self._get_vlan_interface_config_for_svi(svi, vrf, tenant)})
+                    vlan_interface = self._get_vlan_interface_config_for_svi(svi, vrf)
+                    append_if_not_duplicate(
+                        list_of_dicts=vlan_interfaces,
+                        primary_key="name",
+                        new_dict=vlan_interface,
+                        context="VLAN Interfaces",
+                        context_keys=["name", "tenant"],
+                        ignore_keys={"tenant"},
+                    )
 
                 # MLAG IBGP Peering VLANs per VRF
                 # Continue to next VRF if mlag vlan_id is not set
                 if (vlan_id := self._mlag_ibgp_peering_vlan_vrf(vrf, tenant)) is None:
                     continue
 
-                vlan_interfaces.append({"name": f"Vlan{vlan_id}", **self._get_vlan_interface_config_for_mlag_peering(vrf, tenant)})
+                vlan_interface = {"name": f"Vlan{vlan_id}", **self._get_vlan_interface_config_for_mlag_peering(vrf)}
+                append_if_not_duplicate(
+                    list_of_dicts=vlan_interfaces,
+                    primary_key="name",
+                    new_dict=vlan_interface,
+                    context="MLAG iBGP Peering VLAN Interfaces",
+                    context_keys=["name", "tenant"],
+                    ignore_keys={"tenant"},
+                )
 
         if vlan_interfaces:
             return vlan_interfaces
 
         return None
 
-    def _get_vlan_interface_config_for_svi(self, svi, vrf, tenant) -> dict:
+    def _get_vlan_interface_config_for_svi(self, svi, vrf) -> dict:
         def _check_virtual_router_mac_address(vlan_interface_config: dict, variables: list):
             """
             Check if any variable in the list of variables is not None in vlan_interface_config
@@ -58,12 +76,14 @@ class VlanInterfacesMixin(UtilsMixin):
                 )
 
         vlan_interface_config = {
-            "tenant": tenant["name"],
+            "name": f"Vlan{int(svi['id'])}",
+            "tenant": svi["tenant"],
             "tags": svi.get("tags"),
             "description": default(svi.get("description"), svi["name"]),
             "shutdown": not (svi.get("enabled", False)),
             "ip_address": svi.get("ip_address"),
             "ipv6_address": svi.get("ipv6_address"),
+            "ipv6_enable": svi.get("ipv6_enable"),
             "mtu": svi.get("mtu"),
             "eos_cli": svi.get("raw_eos_cli"),
             "struct_cfg": svi.get("structured_config"),
@@ -89,7 +109,7 @@ class VlanInterfacesMixin(UtilsMixin):
             if "ip_address_virtual" in vlan_interface_config:
                 if (vrf_diagnostic_loopback := get(vrf, "vtep_diagnostic.loopback")) is None:
                     raise AristaAvdMissingVariableError(
-                        f"No vtep_diagnostic loopback defined on VRF '{vrf['name']}' in Tenant '{tenant['name']}'."
+                        f"No vtep_diagnostic loopback defined on VRF '{vrf['name']}' in Tenant '{svi['tenant']}'."
                         "This is required when 'l3_multicast' is enabled on the VRF and ip_address_virtual is used on an SVI in that VRF."
                     )
                 pim_config_ipv4["local_interface"] = f"Loopback{vrf_diagnostic_loopback}"
@@ -113,6 +133,10 @@ class VlanInterfacesMixin(UtilsMixin):
 
             _check_virtual_router_mac_address(vlan_interface_config, ["ipv6_address_virtuals"])
 
+            if vlan_interface_config.get("ipv6_address_virtuals"):
+                # If any anycast IPs are set, we also enable link-local IPv6 per best practice, unless specifically disabled with 'ipv6_enable: false'
+                vlan_interface_config["ipv6_enable"] = default(vlan_interface_config["ipv6_enable"], True)
+
         if vrf["name"] != "default":
             vlan_interface_config["vrf"] = vrf["name"]
 
@@ -130,7 +154,7 @@ class VlanInterfacesMixin(UtilsMixin):
                 vlan_interface_config["ip_helpers"] = ip_helpers
 
         if get(svi, "ospf.enabled") is True and get(vrf, "ospf.enabled") is True:
-            vlan_interface_config["ospf_area"] = svi["ospf"].get("area", 0)
+            vlan_interface_config["ospf_area"] = svi["ospf"].get("area", "0")
             vlan_interface_config["ospf_network_point_to_point"] = svi["ospf"].get("point_to_point", False)
             vlan_interface_config["ospf_cost"] = svi["ospf"].get("cost")
             ospf_authentication = svi["ospf"].get("authentication")
@@ -153,9 +177,13 @@ class VlanInterfacesMixin(UtilsMixin):
 
         return vlan_interface_config
 
-    def _get_vlan_interface_config_for_mlag_peering(self, vrf, tenant) -> dict:
+    def _get_vlan_interface_config_for_mlag_peering(self, vrf) -> dict:
+        """
+        Build config for MLAG peering SVI for the given SVI.
+        Called from vlan_interfaces and prefix_lists
+        """
         vlan_interface_config = {
-            "tenant": tenant["name"],
+            "tenant": vrf["tenant"],
             "type": "underlay_peering",
             "shutdown": False,
             "description": f"MLAG_PEER_L3_iBGP: vrf {vrf['name']}",

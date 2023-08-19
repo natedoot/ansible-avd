@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -56,14 +59,16 @@ class OverlayMixin:
         return None
 
     @cached_property
-    def overlay(self: EosDesignsFacts) -> dict:
+    def overlay(self: EosDesignsFacts) -> dict | None:
         """
         Exposed in avd_switch_facts
         """
-        return {
-            "peering_address": self.shared_utils.overlay_peering_address,
-            "evpn_mpls": self.shared_utils.overlay_evpn_mpls,
-        }
+        if self.shared_utils.underlay_router is True:
+            return {
+                "peering_address": self.shared_utils.overlay_peering_address,
+                "evpn_mpls": self.shared_utils.overlay_evpn_mpls,
+            }
+        return None
 
     @cached_property
     def vtep_ip(self: EosDesignsFacts) -> str | None:

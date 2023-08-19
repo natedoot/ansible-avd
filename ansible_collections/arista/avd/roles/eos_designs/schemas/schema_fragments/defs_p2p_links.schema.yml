@@ -20,7 +20,7 @@ $defs:
           description: The values can be speed or auto speed or forced speed.
         ip_pool:
           type: str
-          description: P2P pool name. IP Pool defined under p2p_links_ip_pools. A /31 will be taken from the pool per P2P link
+          description: P2P pool name. IP Pool defined under p2p_links_ip_pools. A /31 will be taken from the pool per P2P link.
         subnet:
           type: str
           description: IPv4 address/Mask. Subnet used on this P2P link.
@@ -105,10 +105,17 @@ $defs:
           type: bool
           default: false
           description: Enable BFD (only considered for BGP).
-        ptp_enable:
+        ptp:
+          description: PTP parameters.
+          type: dict
+          keys:
+            enabled:
+              type: bool
+              default: false
+              description: Enable PTP.
+        sflow:
           type: bool
-          default: false
-          description: Enable PTP
+          description: Enable sFlow. Overrides `fabric_sflow` setting.
         qos_profile:
           type: str
           description: QOS service profile.
@@ -133,7 +140,6 @@ $defs:
                 keys:
                   node:
                     type: str
-                    required: true
                   interfaces:
                     type: list
                     description: List of node interfaces. Ex.- [ 'node1 interface1', 'node1 interface2' ].
@@ -142,3 +148,12 @@ $defs:
         raw_eos_cli:
           type: str
           description: EOS CLI rendered directly on the point-to-point interface in the final EOS configuration.
+        structured_config:
+          type: dict
+          documentation_options:
+            hide_keys: true
+          description: |-
+            Custom structured config for interfaces
+            Note! The content of this dictionary is _not_ validated by the schema, since it can be either ethernet_interfaces or port_channel_interfaces.
+          # Schema ref not implemented since we do not know which of the schemas to look at.
+          # $ref: "eos_cli_config_gen#/keys/ethernet_interfaces/items/"

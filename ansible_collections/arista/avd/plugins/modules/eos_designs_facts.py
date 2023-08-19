@@ -1,17 +1,6 @@
-# Copyright 2022 Arista Networks
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# Copyright (c) 2022-2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 
 DOCUMENTATION = r"""
 ---
@@ -32,15 +21,12 @@ description:
   - The module is used in `arista.avd.eos_designs` to set facts for devices, which are then used by jinja templates
     and python module in `arista.avd.eos_designs` to generate the `structured_configuration`.
 options:
-  schema:
-    description: Schema conforming to "AVD Meta Schema". Either schema or schema_id must be set.
+  template_output:
+    description: |
+      If true the output data will be run through another jinja2 rendering before returning.
+      This is to resolve any input values with inline jinja using variables/facts set by the input templates.
     required: false
-    type: dict
-  schema_id:
-    description: ID of Schema conforming to "AVD Meta Schema".  Either schema or schema_id must be set.
-    required: false
-    type: str
-    choices: [ "eos_cli_config_gen", "eos_designs" ]
+    type: bool
   conversion_mode:
     description:
       - Run data conversion in either "error", "warning", "info", "debug", "quiet" or "disabled" mode.
@@ -71,6 +57,12 @@ options:
     default: "warning"
     type: str
     choices: [ "error", "warning", "info", "debug", "disabled" ]
+  cprofile_file:
+    description:
+      - Filename for storing cprofile data used to debug performance issues.
+      - Running cprofile will slow down performance in it self, so only set this while troubleshooting.
+    required: false
+    type: str
 """
 
 EXAMPLES = r"""

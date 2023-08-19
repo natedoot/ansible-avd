@@ -1,3 +1,4 @@
+hostname: EVPN-MULTICAST-L2LEAF1A
 static_routes:
 - vrf: MGMT
   destination_address_prefix: 0.0.0.0/0
@@ -30,7 +31,7 @@ ethernet_interfaces:
   peer_type: l3leaf
   description: EVPN-MULTICAST-L3LEAF1A_Ethernet6
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 1
     mode: active
@@ -40,7 +41,7 @@ ethernet_interfaces:
   peer_type: l3leaf
   description: EVPN-MULTICAST-L3LEAF1B_Ethernet6
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 1
     mode: active

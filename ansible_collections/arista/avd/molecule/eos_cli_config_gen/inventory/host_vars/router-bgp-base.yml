@@ -19,9 +19,13 @@ router_bgp:
   maximum_paths:
     paths: 32
     ecmp: 32
-  bgp_defaults:
-    - no bgp default ipv4-unicast
   bgp:
+    default:
+      ipv4_unicast: false
+      ipv4_unicast_transport_ipv6: false
+    route_reflector_preserve_attributes:
+      enabled: true
+      always: true
     bestpath:
       d_path: true
   listen_ranges:
@@ -97,6 +101,8 @@ router_bgp:
     redistribute_routes:
       - source_protocol: static
         route_map: RM-IPV6-STATIC-TO-BGP
+      - source_protocol: ospf
+        include_leaked: true
   neighbors:
     - ip_address: 192.0.3.1
       remote_as: 65432

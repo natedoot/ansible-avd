@@ -4,19 +4,17 @@
 type: dict
 keys:
   daemons:
-    documentation_options:
-      filename: data_model/Monitoring
     type: list
     primary_key: name
     convert_types:
     - dict
     display_name: Custom Daemons
+    description: This will add a daemon to the eos configuration that is most useful when trying to run OpenConfig clients like ocprometheus.
     items:
       type: dict
       keys:
         name:
           type: str
-          required: true
           description: Daemon Name
         exec:
           type: str

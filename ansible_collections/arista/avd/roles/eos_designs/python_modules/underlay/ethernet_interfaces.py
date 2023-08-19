@@ -1,10 +1,12 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
 
 from ansible_collections.arista.avd.plugins.filter.list_compress import list_compress
-from ansible_collections.arista.avd.plugins.plugin_utils.errors import AristaAvdError
-from ansible_collections.arista.avd.plugins.plugin_utils.utils import get, get_item
+from ansible_collections.arista.avd.plugins.plugin_utils.utils import append_if_not_duplicate, get
 
 from .utils import UtilsMixin
 
@@ -44,6 +46,7 @@ class EthernetInterfacesMixin(UtilsMixin):
                         "type": "routed",
                         "ipv6_enable": link.get("ipv6_enable"),
                         "link_tracking_groups": link.get("link_tracking_groups"),
+                        "sflow": link.get("sflow"),
                     }
                 )
 
@@ -100,17 +103,21 @@ class EthernetInterfacesMixin(UtilsMixin):
 
             # L2 interface
             elif link["type"] == "underlay_l2":
-                ethernet_interface["type"] = "switched"
-
                 if (channel_group_id := link.get("channel_group_id")) is not None:
-                    ethernet_interface["channel_group"] = {
-                        "id": int(channel_group_id),
-                        "mode": "active",
-                    }
+                    ethernet_interface.update(
+                        {
+                            "type": "port-channel-member",
+                            "channel_group": {
+                                "id": int(channel_group_id),
+                                "mode": "active",
+                            },
+                        }
+                    )
                 else:
                     vlans = get(link, "vlans", default=[])
                     ethernet_interface.update(
                         {
+                            "type": "switched",
                             "vlans": list_compress(vlans),
                             "native_vlan": link.get("native_vlan"),
                             "service_profile": self.shared_utils.p2p_uplinks_qos_profile,
@@ -120,19 +127,13 @@ class EthernetInterfacesMixin(UtilsMixin):
 
             # Remove None values
             ethernet_interface = {key: value for key, value in ethernet_interface.items() if value is not None}
-
-            if (found_eth_interface := get_item(ethernet_interfaces, "name", ethernet_interface["name"])) is None:
-                ethernet_interfaces.append(ethernet_interface)
-            else:
-                if found_eth_interface == ethernet_interface:
-                    # Same ethernet_interface information twice in the input data. So not duplicate interface name.
-                    continue
-
-                raise AristaAvdError(
-                    f"Duplicate interface name {ethernet_interface['name']} found while generating ethernet_interfaces for underlay peer:"
-                    f" {ethernet_interface['peer']}, peer_interface: {ethernet_interface['peer_interface']}. Description on duplicate interface name:"
-                    f" {found_eth_interface['description']}"
-                )
+            append_if_not_duplicate(
+                list_of_dicts=ethernet_interfaces,
+                primary_key="name",
+                new_dict=ethernet_interface,
+                context="Ethernet Interfaces defined for underlay",
+                context_keys=["name", "peer", "peer_interface"],
+            )
 
         if ethernet_interfaces:
             return ethernet_interfaces

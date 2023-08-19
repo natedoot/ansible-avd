@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -155,7 +158,7 @@ class UtilsMixin:
         if self.shared_utils.overlay_mpls is not True:
             return {}
 
-        if get(self._hostvars, "bgp_mesh_pe") is not True:
+        if get(self._hostvars, "bgp_mesh_pes") is not True:
             return {}
 
         mpls_mesh_pe = {}
@@ -236,5 +239,5 @@ class UtilsMixin:
         bgp_as = peer_facts.get("bgp_as")
         peers_dict[peer_name] = {
             "bgp_as": str(bgp_as) if bgp_as is not None else None,
-            "ip_address": get(peer_facts, "overlay.peering_address", required=True),
+            "ip_address": get(peer_facts, "overlay.peering_address", required=True, org_key=f"switch.overlay.peering_address for {peer_name}"),
         }

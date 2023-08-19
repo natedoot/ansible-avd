@@ -1,8 +1,11 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
 
-from ansible_collections.arista.avd.plugins.plugin_utils.utils import get
+from ansible_collections.arista.avd.plugins.plugin_utils.utils import append_if_not_duplicate, get
 from ansible_collections.arista.avd.roles.eos_designs.python_modules.network_services.utils import UtilsMixin
 
 
@@ -27,15 +30,15 @@ class RouterPimSparseModeMixin(UtilsMixin):
         for tenant in self._filtered_tenants:
             for vrf in tenant["vrfs"]:
                 if vrf_rps := get(vrf, "_pim_rp_addresses"):
-                    vrfs.append(
-                        {
-                            "name": vrf["name"],
-                            "ipv4": {
-                                "rp_addresses": vrf_rps,
-                            },
-                        }
+                    vrf_config = {
+                        "name": vrf["name"],
+                        "ipv4": {
+                            "rp_addresses": vrf_rps,
+                        },
+                    }
+                    append_if_not_duplicate(
+                        list_of_dicts=vrfs, primary_key="name", new_dict=vrf_config, context="Router PIM Sparse-Mode for VRFs", context_keys=["name"]
                     )
-
         if vrfs:
             return {"vrfs": vrfs}
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -7,6 +10,39 @@ from ansible_collections.arista.avd.plugins.plugin_utils.utils import get, get_i
 
 if TYPE_CHECKING:
     from .shared_utils import SharedUtils
+
+DEFAULT_PTP_PROFILES = [
+    {
+        "profile": "aes67-r16-2016",
+        "announce": {
+            "interval": 0,
+            "timeout": 3,
+        },
+        "delay_req": -3,
+        "sync_message": {"interval": -3},
+        "transport": "ipv4",
+    },
+    {
+        "profile": "smpte2059-2",
+        "announce": {
+            "interval": -2,
+            "timeout": 3,
+        },
+        "delay_req": -4,
+        "sync_message": {"interval": -4},
+        "transport": "ipv4",
+    },
+    {
+        "profile": "aes67",
+        "announce": {
+            "interval": 2,
+            "timeout": 3,
+        },
+        "delay_req": 0,
+        "sync_message": {"interval": 0},
+        "transport": "ipv4",
+    },
+]
 
 
 class PtpMixin:
@@ -33,6 +69,6 @@ class PtpMixin:
     @cached_property
     def ptp_profiles(self: SharedUtils) -> list:
         """
-        Return ptp_profiles or []
+        Return ptp_profiles
         """
-        return get(self.hostvars, "ptp_profiles", default=[])
+        return get(self.hostvars, "ptp_profiles", default=DEFAULT_PTP_PROFILES)

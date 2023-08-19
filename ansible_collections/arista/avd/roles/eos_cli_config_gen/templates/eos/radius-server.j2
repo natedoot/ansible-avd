@@ -1,3 +1,8 @@
+{#
+ Copyright (c) 2023 Arista Networks, Inc.
+ Use of this source code is governed by the Apache License 2.0
+ that can be found in the LICENSE file.
+#}
 {# eos - radius server #}
 {# New data model replacing radius_servers #}
 {% if radius_server is arista.avd.defined %}
@@ -33,7 +38,7 @@
 {%             set radius_cli = radius_cli ~ " retransmit " ~ radius_host.retransmit %}
 {%         endif %}
 {%         if radius_host.key is arista.avd.defined %}
-{%             set radius_cli = radius_cli ~ " key 7 " ~ radius_host.key %}
+{%             set radius_cli = radius_cli ~ " key 7 " ~ radius_host.key | arista.avd.hide_passwords(hide_passwords) %}
 {%         endif %}
 {{ radius_cli }}
 {%     endfor %}

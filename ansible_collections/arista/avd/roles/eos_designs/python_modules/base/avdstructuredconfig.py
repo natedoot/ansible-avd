@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -12,7 +15,11 @@ from ansible_collections.arista.avd.plugins.plugin_utils.strip_empties import st
 from ansible_collections.arista.avd.plugins.plugin_utils.utils import get
 
 
-class AvdStructuredConfig(AvdFacts):
+class AvdStructuredConfigBase(AvdFacts):
+    @cached_property
+    def hostname(self) -> str:
+        return self.shared_utils.hostname
+
     @cached_property
     def serial_number(self) -> str | None:
         """
@@ -29,19 +36,43 @@ class AvdStructuredConfig(AvdFacts):
         if self.shared_utils.bgp_as is None:
             return None
 
-        bgp_defaults = get(self.shared_utils.switch_data_combined, "bgp_defaults", default=[])
+        platform_bgp_update_wait_for_convergence = (
+            get(self.shared_utils.platform_settings, "feature_support.bgp_update_wait_for_convergence", default=True) is True
+        )
+        platform_bgp_update_wait_install = get(self.shared_utils.platform_settings, "feature_support.bgp_update_wait_install", default=True) is True
 
-        if (bgp_maximum_paths := get(self._hostvars, "bgp_maximum_paths")) is not None:
-            max_paths_str = f"maximum-paths {bgp_maximum_paths}"
-            if (bgp_ecmp := get(self._hostvars, "bgp_ecmp")) is not None:
-                max_paths_str += f" ecmp {bgp_ecmp}"
-            bgp_defaults.append(max_paths_str)
-
-        return {
+        router_bgp = {
             "as": self.shared_utils.bgp_as,
             "router_id": self.shared_utils.router_id,
-            "bgp_defaults": bgp_defaults,
+            "distance": get(self._hostvars, "bgp_distance"),
+            "bgp_defaults": get(self.shared_utils.switch_data_combined, "bgp_defaults"),
+            "bgp": {
+                "default": {
+                    "ipv4_unicast": get(self._hostvars, "bgp_default_ipv4_unicast", default=False),
+                },
+            },
+            "maximum_paths": {
+                "paths": get(self._hostvars, "bgp_maximum_paths", default=4),
+                "ecmp": get(self._hostvars, "bgp_ecmp", default=4),
+            },
         }
+        if get(self._hostvars, "bgp_update_wait_for_convergence", default=False) is True and platform_bgp_update_wait_for_convergence:
+            router_bgp.setdefault("updates", {})["wait_for_convergence"] = True
+
+        if get(self._hostvars, "bgp_update_wait_install", default=True) is True and platform_bgp_update_wait_install:
+            router_bgp.setdefault("updates", {})["wait_install"] = True
+
+        if get(self._hostvars, "bgp_graceful_restart.enabled") is True:
+            router_bgp.update(
+                {
+                    "graceful_restart": {
+                        "enabled": True,
+                        "restart_time": get(self._hostvars, "bgp_graceful_restart.restart_time", default=300),
+                    },
+                },
+            )
+
+        return strip_null_from_data(router_bgp)
 
     @cached_property
     def static_routes(self) -> list | None:
@@ -207,6 +238,7 @@ class AvdStructuredConfig(AvdFacts):
             else:
                  <updating as cvp_on_prem ip>
         """
+        # cvp_instance_ip will be removed in AVD5.0
         cvp_instance_ip = get(self._hostvars, "cvp_instance_ip")
         cvp_instance_ip_list = get(self._hostvars, "cvp_instance_ips", [])
         if cvp_instance_ip is not None:
@@ -225,7 +257,7 @@ class AvdStructuredConfig(AvdFacts):
                 }
             else:
                 # updating for cvp_on_prem_ips
-                cv_address = f"{cvp_instance_ip}:{get(self._hostvars, 'terminattr_ingestgrpcurl_port')}"
+                cv_address = f"{cvp_instance_ip}:{get(self._hostvars, 'terminattr_ingestgrpcurl_port', default=9910)}"
                 daemon_terminattr["cvaddrs"].append(cv_address)
                 if (cvp_ingestauth_key := get(self._hostvars, "cvp_ingestauth_key")) is not None:
                     daemon_terminattr["cvauth"] = {
@@ -234,13 +266,13 @@ class AvdStructuredConfig(AvdFacts):
                     }
                 else:
                     daemon_terminattr["cvauth"] = {
-                        "method": "token-secure",
-                        "token_file": get(self._hostvars, "cvp_token_file", "/tmp/cv-onboarding-token"),
+                        "method": "token",
+                        "token_file": get(self._hostvars, "cvp_token_file", "/tmp/token"),
                     }
 
         daemon_terminattr["cvvrf"] = self.shared_utils.mgmt_interface_vrf
-        daemon_terminattr["smashexcludes"] = get(self._hostvars, "terminattr_smashexcludes")
-        daemon_terminattr["ingestexclude"] = get(self._hostvars, "terminattr_ingestexclude")
+        daemon_terminattr["smashexcludes"] = get(self._hostvars, "terminattr_smashexcludes", default="ale,flexCounter,hardware,kni,pulse,strata")
+        daemon_terminattr["ingestexclude"] = get(self._hostvars, "terminattr_ingestexclude", default="/Sysdb/cell/1/agent,/Sysdb/cell/2/agent")
         daemon_terminattr["disable_aaa"] = get(self._hostvars, "terminattr_disable_aaa", False)
 
         return daemon_terminattr
@@ -250,13 +282,14 @@ class AvdStructuredConfig(AvdFacts):
         """
         vlan_internal_order set based on internal_vlan_order data-model
         """
-        return {
-            "allocation": get(self._hostvars, "internal_vlan_order.allocation"),
+        DEFAULT_INTERNAL_VLAN_ORDER = {
+            "allocation": "ascending",
             "range": {
-                "beginning": get(self._hostvars, "internal_vlan_order.range.beginning"),
-                "ending": get(self._hostvars, "internal_vlan_order.range.ending"),
+                "beginning": 1006,
+                "ending": 1199,
             },
         }
+        return get(self._hostvars, "internal_vlan_order", default=DEFAULT_INTERNAL_VLAN_ORDER)
 
     @cached_property
     def event_monitor(self) -> dict | None:
@@ -292,16 +325,11 @@ class AvdStructuredConfig(AvdFacts):
         if (queue_monitor_length := get(self._hostvars, "queue_monitor_length")) is None:
             return None
 
-        queue_monitor_length_dict = {"enabled": True}
-        queue_monitor_length_notifying = get(queue_monitor_length, "notifying")
-        notify_supported = get(self.shared_utils.platform_settings, "feature_support.queue_monitor_length_notify")
-        if queue_monitor_length_notifying is not None and notify_supported is not False:
-            queue_monitor_length_dict["notifying"] = queue_monitor_length_notifying
+        # Remove notifying key if not supported by the platform settings.
+        if not self.shared_utils.platform_settings_feature_support_queue_monitor_length_notify:
+            queue_monitor_length.pop("notifying", None)
 
-        if get(queue_monitor_length, "log") is not None:
-            queue_monitor_length_dict["log"] = queue_monitor_length.get("log")
-
-        return queue_monitor_length_dict
+        return queue_monitor_length
 
     @cached_property
     def ip_name_servers(self) -> list | None:
@@ -457,34 +485,12 @@ class AvdStructuredConfig(AvdFacts):
     @cached_property
     def local_users(self) -> list | None:
         """
-        local_users set based on various information from local_users data-model
+        local_users set based on local_users data model
         """
         if (local_users := get(self._hostvars, "local_users")) is None:
             return None
 
-        local_users = convert_dicts(local_users, "name")
-        local_users_list = []
-        for local_user in natural_sort(local_users, "name"):
-            name = local_user.get("name")
-            if local_user.get("disabled") is True:
-                local_users_list.append({"name": name, "disabled": True})
-                continue
-
-            local_users_dict = {"name": name, "privilege": get(local_user, "privilege")}
-            if (role := local_user.get("role")) is not None:
-                local_users_dict["role"] = role
-
-            if (sha512_password := local_user.get("sha512_password")) is not None:
-                local_users_dict["sha512_password"] = sha512_password
-            elif (no_password := local_user.get("no_password")) is not None:
-                local_users_dict["no_password"] = no_password
-
-            if (ssh_key := local_user.get("ssh_key")) is not None:
-                local_users_dict["ssh_key"] = ssh_key
-
-            local_users_list.append(local_users_dict)
-
-        return local_users_list
+        return natural_sort(convert_dicts(local_users, "name"), "name")
 
     @cached_property
     def clock(self) -> dict | None:
@@ -500,12 +506,13 @@ class AvdStructuredConfig(AvdFacts):
         """
         vrfs set based on mgmt_interface_vrf variable
         """
+        mgmt_vrf_routing = get(self._hostvars, "mgmt_vrf_routing", default=False)
         vrf_settings = {
             "name": self.shared_utils.mgmt_interface_vrf,
-            "ip_routing": get(self._hostvars, "mgmt_vrf_routing"),
+            "ip_routing": mgmt_vrf_routing,
         }
         if self.shared_utils.ipv6_mgmt_ip is not None:
-            vrf_settings["ipv6_routing"] = get(self._hostvars, "mgmt_vrf_routing")
+            vrf_settings["ipv6_routing"] = mgmt_vrf_routing
         return [vrf_settings]
 
     @cached_property
@@ -605,7 +612,7 @@ class AvdStructuredConfig(AvdFacts):
         """
         management_api_http set based on management_eapi data-model
         """
-        if (management_eapi := get(self._hostvars, "management_eapi")) is None:
+        if (management_eapi := get(self._hostvars, "management_eapi", default={"enable_https": True})) is None:
             return None
 
         management_api_http = {"enable_vrfs": [{"name": self.shared_utils.mgmt_interface_vrf}]}
@@ -658,9 +665,7 @@ class AvdStructuredConfig(AvdFacts):
     def ptp(self) -> dict | None:
         """
         Generates PTP config on node level as well as for interfaces, using various defaults.
-        - The following are set in roles/eos_designs/defaults/main/default-node-type-keys.yml
-            default_node_type_keys:
-              "l3ls-evpn":
+        - The following are set in default node_type_keys for design "l3ls-evpn":
                 spine:
                   default_ptp_priority1: 20
                 l3leaf:
@@ -683,7 +688,8 @@ class AvdStructuredConfig(AvdFacts):
 
             priority2 = self.shared_utils.id % 256
 
-        if get(self.shared_utils.switch_data_combined, "ptp.auto_clock_identity", default=True) is True:
+        default_auto_clock_identity = get(self._hostvars, "ptp.auto_clock_identity", default=True)
+        if get(self.shared_utils.switch_data_combined, "ptp.auto_clock_identity", default=default_auto_clock_identity) is True:
             clock_identity_prefix = get(self.shared_utils.switch_data_combined, "ptp.clock_identity_prefix", default="00:1C:73")
             default_clock_identity = f"{clock_identity_prefix}:{priority1:02x}:00:{priority2:02x}"
 

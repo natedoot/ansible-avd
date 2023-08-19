@@ -147,7 +147,7 @@ management api http-commands
 ```eos
 !
 username admin privilege 15 role network-admin nopassword
-username cvpadmin privilege 15 role network-admin secret sha512 $6$rZKcbIZ7iWGAWTUM$TCgDn1KcavS0s.OV8lacMTUkxTByfzcGlFlYUWroxYuU7M/9bIodhRO7nXGzMweUxvbk8mJmQl8Bh44cRktUj.
+username cvpadmin privilege 15 role network-admin secret sha512 <removed>
 ```
 
 ## Monitoring
@@ -165,7 +165,7 @@ username cvpadmin privilege 15 role network-admin secret sha512 $6$rZKcbIZ7iWGAW
 ```eos
 !
 daemon TerminAttr
-   exec /usr/bin/TerminAttr -cvaddr=192.168.200.11:9910 -cvauth=key,telarista -cvvrf=MGMT -smashexcludes=ale,flexCounter,hardware,kni,pulse,strata -ingestexclude=/Sysdb/cell/1/agent,/Sysdb/cell/2/agent -taillogs
+   exec /usr/bin/TerminAttr -cvaddr=192.168.200.11:9910 -cvauth=key,<removed> -cvvrf=MGMT -smashexcludes=ale,flexCounter,hardware,kni,pulse,strata -ingestexclude=/Sysdb/cell/1/agent,/Sysdb/cell/2/agent -taillogs
    no shutdown
 ```
 
@@ -216,6 +216,8 @@ vlan internal order ascending range 1006 1199
 | --------- | ----------- | ---- | --------------| ------------ | --- | --- | -------- | -------------- | -------------------| ----------- | ------------ |
 | Ethernet1 | P2P_LINK_TO_DC1-LEAF3A_Ethernet1 | routed | - | - | default | 1500 | False | - | - | - | - |
 | Ethernet2 | P2P_LINK_TO_DC1-LEAF3B_Ethernet1 | routed | - | - | default | 1500 | False | - | - | - | - |
+| Ethernet3 | P2P_LINK_TO_DC1-LEAF3A_Ethernet2 | routed | - | - | default | 1500 | False | - | - | - | - |
+| Ethernet4 | P2P_LINK_TO_DC1-LEAF3B_Ethernet2 | routed | - | - | default | 1500 | False | - | - | - | - |
 
 #### Ethernet Interfaces Device Configuration
 
@@ -230,6 +232,20 @@ interface Ethernet1
 !
 interface Ethernet2
    description P2P_LINK_TO_DC1-LEAF3B_Ethernet1
+   no shutdown
+   mtu 1500
+   no switchport
+   ipv6 enable
+!
+interface Ethernet3
+   description P2P_LINK_TO_DC1-LEAF3A_Ethernet2
+   no shutdown
+   mtu 1500
+   no switchport
+   ipv6 enable
+!
+interface Ethernet4
+   description P2P_LINK_TO_DC1-LEAF3B_Ethernet2
    no shutdown
    mtu 1500
    no switchport
@@ -333,8 +349,9 @@ ip route vrf MGMT 0.0.0.0/0 192.168.200.5
 
 | BGP Tuning |
 | ---------- |
-| no bgp default ipv4-unicast |
 | distance bgp 20 200 200 |
+| update wait-install |
+| no bgp default ipv4-unicast |
 | maximum-paths 4 ecmp 4 |
 
 #### Router BGP Peer Groups
@@ -372,6 +389,8 @@ ip route vrf MGMT 0.0.0.0/0 192.168.200.5
 | ------------------ | --- | ---------- | --------- | ----------- |
 | Ethernet1 | default | UNDERLAY_PEERS | 65106 | - |
 | Ethernet2 | default | UNDERLAY_PEERS | 65106 | - |
+| Ethernet3 | default | UNDERLAY_PEERS | 65106 | - |
+| Ethernet4 | default | UNDERLAY_PEERS | 65106 | - |
 
 #### Router BGP EVPN Address Family
 
@@ -387,23 +406,26 @@ ip route vrf MGMT 0.0.0.0/0 192.168.200.5
 !
 router bgp 65001
    router-id 192.168.255.5
+   maximum-paths 4 ecmp 4
+   update wait-install
    no bgp default ipv4-unicast
    distance bgp 20 200 200
-   maximum-paths 4 ecmp 4
    neighbor EVPN-OVERLAY-PEERS peer group
    neighbor EVPN-OVERLAY-PEERS next-hop-unchanged
    neighbor EVPN-OVERLAY-PEERS update-source Loopback0
    neighbor EVPN-OVERLAY-PEERS bfd
    neighbor EVPN-OVERLAY-PEERS ebgp-multihop 3
-   neighbor EVPN-OVERLAY-PEERS password 7 q+VNViP5i4rVjW1cxFv2wA==
+   neighbor EVPN-OVERLAY-PEERS password 7 <removed>
    neighbor EVPN-OVERLAY-PEERS send-community
    neighbor EVPN-OVERLAY-PEERS maximum-routes 0
    neighbor UNDERLAY_PEERS peer group
-   neighbor UNDERLAY_PEERS password 7 af6F4WLl4wUrWRZcwbEwkQ==
+   neighbor UNDERLAY_PEERS password 7 <removed>
    neighbor UNDERLAY_PEERS send-community
    neighbor UNDERLAY_PEERS maximum-routes 12000
    neighbor interface Ethernet1 peer-group UNDERLAY_PEERS remote-as 65106
    neighbor interface Ethernet2 peer-group UNDERLAY_PEERS remote-as 65106
+   neighbor interface Ethernet3 peer-group UNDERLAY_PEERS remote-as 65106
+   neighbor interface Ethernet4 peer-group UNDERLAY_PEERS remote-as 65106
    neighbor 2001:1::c peer group EVPN-OVERLAY-PEERS
    neighbor 2001:1::c remote-as 65106
    neighbor 2001:1::c description DC1-LEAF3A

@@ -1,10 +1,13 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 import re
 from functools import cached_property
 
 from ansible_collections.arista.avd.plugins.filter.natural_sort import natural_sort
-from ansible_collections.arista.avd.plugins.plugin_utils.utils import get
+from ansible_collections.arista.avd.plugins.plugin_utils.utils import append_if_not_duplicate, get
 
 from .utils import UtilsMixin
 
@@ -63,7 +66,13 @@ class PatchPanelMixin(UtilsMixin):
                                         "endpoint": f"bgp vpws {tenant['name']} pseudowire {point_to_point_service['name']}_{subif['number']}",
                                     }
                                 )
-                            patches.append(patch)
+                            append_if_not_duplicate(
+                                list_of_dicts=patches,
+                                primary_key="name",
+                                new_dict=patch,
+                                context="Patches defined under point_to_point_services",
+                                context_keys=["name"],
+                            )
                     else:
                         patch = {
                             "name": f"{point_to_point_service['name']}",
@@ -84,7 +93,13 @@ class PatchPanelMixin(UtilsMixin):
                                     "endpoint": f"bgp vpws {tenant['name']} pseudowire {point_to_point_service['name']}",
                                 }
                             )
-                        patches.append(patch)
+                        append_if_not_duplicate(
+                            list_of_dicts=patches,
+                            primary_key="name",
+                            new_dict=patch,
+                            context="Patches defined under point_to_point_services",
+                            context_keys=["name"],
+                        )
 
         if patches:
             return {"patches": patches}

@@ -1,3 +1,4 @@
+hostname: uplink-native-vlan-grandparent
 service_routing_protocols_model: multi-agent
 vlan_internal_order:
   allocation: ascending
@@ -18,7 +19,7 @@ ethernet_interfaces:
   peer_type: l2leaf
   description: UPLINK-NATIVE-VLAN-PARENT_Ethernet1
   shutdown: false
-  type: switched
+  type: port-channel-member
   channel_group:
     id: 1
     mode: active

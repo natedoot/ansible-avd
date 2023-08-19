@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -53,7 +56,7 @@ class RouterBgpMixin(UtilsMixin):
             "name": self.shared_utils.bgp_peer_groups[pg_name]["name"],
             "type": pg_type,
             "update_source": "Loopback0",
-            "bfd": True,
+            "bfd": self.shared_utils.bgp_peer_groups[pg_name]["bfd"],
             "password": self.shared_utils.bgp_peer_groups[pg_name]["password"],
             "send_community": "all",
             "maximum_routes": 0,

@@ -1,10 +1,17 @@
+hostname: DC1_UNDEPLOYED_LEAF1B
 router_bgp:
   as: '65111'
   router_id: 192.168.255.22
   bgp_defaults:
-  - no bgp default ipv4-unicast
   - distance bgp 20 200 200
-  - maximum-paths 4 ecmp 4
+  bgp:
+    default:
+      ipv4_unicast: false
+  maximum_paths:
+    paths: 4
+    ecmp: 4
+  updates:
+    wait_install: true
   peer_groups:
   - name: MLAG-PEERS
     type: ipv4
@@ -99,9 +106,12 @@ router_bgp:
         - '12:12'
     redistribute_routes:
     - source_protocol: connected
+      route_map: RM-CONN-2-BGP-VRFS
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_A_DB_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:13
@@ -116,9 +126,12 @@ router_bgp:
         - '13:13'
     redistribute_routes:
     - source_protocol: connected
+      route_map: RM-CONN-2-BGP-VRFS
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_A_OP_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:9
@@ -136,6 +149,8 @@ router_bgp:
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_A_WAN_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:14
@@ -152,9 +167,12 @@ router_bgp:
         - 65000:789
     redistribute_routes:
     - source_protocol: connected
+      route_map: RM-CONN-2-BGP-VRFS
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_A_WEB_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:11
@@ -169,9 +187,12 @@ router_bgp:
         - '11:11'
     redistribute_routes:
     - source_protocol: connected
+      route_map: RM-CONN-2-BGP-VRFS
     neighbors:
     - ip_address: 172.31.11.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_B_OP_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:20
@@ -189,6 +210,8 @@ router_bgp:
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_B_WAN_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:21
@@ -206,6 +229,8 @@ router_bgp:
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_C_OP_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:30
@@ -223,6 +248,8 @@ router_bgp:
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   - name: Tenant_C_WAN_Zone
     router_id: 192.168.255.22
     rd: 192.168.255.22:31
@@ -240,6 +267,8 @@ router_bgp:
     neighbors:
     - ip_address: 10.255.251.24
       peer_group: MLAG-PEERS
+    updates:
+      wait_install: true
   vlan_aware_bundles:
   - name: Tenant_A_APP_Zone
     rd: 192.168.255.22:12
@@ -380,6 +409,9 @@ spanning_tree:
 local_users:
 - name: admin
   disabled: true
+  privilege: 15
+  role: network-admin
+  no_password: true
 - name: cvpadmin
   privilege: 15
   role: network-admin
@@ -437,16 +469,16 @@ management_api_http:
   enable_https: true
   default_services: false
 vlans:
-- tenant: system
+- id: 4090
+  tenant: system
   name: LEAF_PEER_L3
   trunk_groups:
   - LEAF_PEER_L3
-  id: 4090
-- tenant: system
+- id: 4092
+  tenant: system
   name: MLAG_PEER
   trunk_groups:
   - MLAG
-  id: 4092
 - id: 130
   name: Tenant_A_APP_Zone_1
   tenant: Tenant_A
@@ -793,28 +825,28 @@ port_channel_interfaces:
   - LEAF_PEER_L3
   - MLAG
 ethernet_interfaces:
-- peer: DC1_UNDEPLOYED_LEAF1A
+- name: Ethernet57/1
+  peer: DC1_UNDEPLOYED_LEAF1A
   peer_interface: Ethernet57/1
   peer_type: mlag_peer
   description: MLAG_PEER_DC1_UNDEPLOYED_LEAF1A_Ethernet57/1
-  type: switched
+  type: port-channel-member
   shutdown: false
   channel_group:
     id: 571
     mode: active
   speed: 100g
-  name: Ethernet57/1
-- peer: DC1_UNDEPLOYED_LEAF1A
+- name: Ethernet58/1
+  peer: DC1_UNDEPLOYED_LEAF1A
   peer_interface: Ethernet58/1
   peer_type: mlag_peer
   description: MLAG_PEER_DC1_UNDEPLOYED_LEAF1A_Ethernet58/1
-  type: switched
+  type: port-channel-member
   shutdown: false
   channel_group:
     id: 571
     mode: active
   speed: 100g
-  name: Ethernet58/1
 - name: Ethernet49/1
   peer: DC1-SPINE1
   peer_interface: Ethernet29
@@ -876,6 +908,14 @@ route_maps:
     type: permit
     match:
     - ip address prefix-list PL-LOOPBACKS-EVPN-OVERLAY
+- name: RM-CONN-2-BGP-VRFS
+  sequence_numbers:
+  - sequence: 10
+    type: deny
+    match:
+    - ip address prefix-list PL-MLAG-PEER-VRFS
+  - sequence: 20
+    type: permit
 loopback_interfaces:
 - name: Loopback0
   description: EVPN_Overlay_Peering
@@ -897,6 +937,12 @@ prefix_lists:
     action: permit 192.168.255.0/24 eq 32
   - sequence: 20
     action: permit 192.168.254.0/24 eq 32
+- name: PL-MLAG-PEER-VRFS
+  sequence_numbers:
+  - sequence: 10
+    action: permit 10.255.251.24/31
+  - sequence: 20
+    action: permit 172.31.11.24/31
 router_bfd:
   multihop:
     interval: 1200
@@ -905,8 +951,8 @@ router_bfd:
 ip_igmp_snooping:
   globally_enabled: true
   vlans:
-  - enabled: false
-    id: 120
+  - id: 120
+    enabled: false
 ip_virtual_router_mac_address: 00:dc:00:00:00:0a
 vxlan_interface:
   Vxlan1:

@@ -29,12 +29,12 @@
 | DC1_FABRIC | l3leaf | DC1-LEAF3B | 192.168.200.107/24 | 7280R | Provisioned | - |
 | DC1_FABRIC | l3leaf | DC1-LEAF4A | 192.168.200.106/24 | 7280R | Provisioned | - |
 | DC1_FABRIC | l3leaf | DC1-LEAF4B | 192.168.200.107/24 | 7280R | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE1 | 192.168.200.101/24 | vEOS-LAB | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE2 | 192.168.200.102/24 | vEOS-LAB | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE3 | 192.168.200.103/24 | vEOS-LAB | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE4 | 192.168.200.104/24 | vEOS-LAB | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE5 | 192.168.200.105/24 | vEOS-LAB | Provisioned | - |
-| DC1_FABRIC | spine | DC1-SPINE6 | 192.168.200.105/24 | vEOS-LAB | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE1 | 192.168.200.101/24 | 7050X3 | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE2 | 192.168.200.102/24 | 7050X3 | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE3 | 192.168.200.103/24 | 7050X3 | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE4 | 192.168.200.104/24 | 7050X3 | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE5 | 192.168.200.105/24 | 7050X3 | Provisioned | - |
+| DC1_FABRIC | spine | DC1-SPINE6 | 192.168.200.105/24 | 7050X3 | Provisioned | - |
 | DC1_FABRIC | l3leaf | DC1-SVC3A | 192.168.200.108/24 | 7280R | Provisioned | - |
 | DC1_FABRIC | l3leaf | DC1-SVC3B | 192.168.200.109/24 | 7280R | Provisioned | - |
 
@@ -82,9 +82,11 @@
 | l3leaf | DC1-LEAF2B | Ethernet3 | spine | DC1-SPINE3 | Ethernet3 |
 | l3leaf | DC1-LEAF2B | Ethernet4 | spine | DC1-SPINE4 | Ethernet3 |
 | l3leaf | DC1-LEAF3A | Ethernet1 | spine | DC1-SPINE5 | Ethernet1 |
+| l3leaf | DC1-LEAF3A | Ethernet2 | spine | DC1-SPINE5 | Ethernet3 |
 | l3leaf | DC1-LEAF3A | Ethernet5 | mlag_peer | DC1-LEAF3B | Ethernet5 |
 | l3leaf | DC1-LEAF3A | Ethernet6 | mlag_peer | DC1-LEAF3B | Ethernet6 |
 | l3leaf | DC1-LEAF3B | Ethernet1 | spine | DC1-SPINE5 | Ethernet2 |
+| l3leaf | DC1-LEAF3B | Ethernet2 | spine | DC1-SPINE5 | Ethernet4 |
 | l3leaf | DC1-LEAF4A | Ethernet1 | spine | DC1-SPINE6 | Ethernet1 |
 | l3leaf | DC1-LEAF4A | Ethernet5 | mlag_peer | DC1-LEAF4B | Ethernet5 |
 | l3leaf | DC1-LEAF4A | Ethernet6 | mlag_peer | DC1-LEAF4B | Ethernet6 |

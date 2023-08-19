@@ -10,11 +10,26 @@ help: ## Display help message
 	@grep -E '^[0-9a-zA-Z_-]+\.*[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 #########################################
-# Ansible Collection actions		 	#
+# Ansible Collection actions		#
 #########################################
 .PHONY: collection-build
 collection-build: ## Build arista.cvp collection locally
 	ansible-galaxy collection build --force ansible_collections/arista/avd
+
+#########################################
+# pyavd actions                 #
+#########################################
+.PHONY: pyavd-build
+pyavd-build: ## Build pyavd python package locally
+	cd python-avd && $(MAKE) dep build
+
+.PHONY: pyavd-test
+pyavd-test: ## Test pyavd python code
+	cd python-avd && $(MAKE) dep && tox
+
+.PHONY: pyavd-publish
+pyavd-publish: ## Build and publish pyavd python package
+	cd python-avd && $(MAKE) dep build publish
 
 #########################################
 # Code Validation using ansible-test 	#
@@ -64,16 +79,18 @@ integration-tests: ## Run integration test cases using ansible-test
 #########################################
 # Documentation actions					#
 #########################################
-.PHONY: webdoc
-webdoc: ## Build documentation to publish static content
-	( cd $(WEBDOC_BUILD) ; \
-	python ansible2rst.py ; \
-	mkdir ../modules/ ; \
-	find . -name '*.rst' -exec pandoc {} --from rst --to gfm -o ../modules/{}.md \;)
-	cp $(CURRENT_DIR)/contributing.md $(WEBDOC_BUILD)/.. ;\
-	cp -r $(CURRENT_DIR)/media $(WEBDOC_BUILD)/../ ;\
-	cd $(CURRENT_DIR)
-	mkdocs build -f mkdocs.yml
+.PHONY: webdoc-up
+webdoc-up: ## Build documentation to view
+	docker-compose -f development/docker-compose.yml up -d webdoc_avd ; \
+	docker exec -it webdoc_avd sh
+
+.PHONY: webdoc-down
+webdoc-down: ## shutdown docs
+	docker-compose -f development/docker-compose.yml down
+
+.PHONY: webdoc-logs
+webdoc-logs: ## View logs
+	docker logs webdoc_avd
 
 .PHONY: check-avd-404
 check-avd-404: ## Check local 404 links for AVD documentation

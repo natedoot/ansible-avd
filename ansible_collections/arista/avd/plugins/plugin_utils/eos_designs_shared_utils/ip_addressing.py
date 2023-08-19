@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
@@ -5,12 +8,11 @@ from typing import TYPE_CHECKING
 
 from ansible_collections.arista.avd.plugins.plugin_utils.merge import merge
 from ansible_collections.arista.avd.plugins.plugin_utils.utils import get, load_python_class
-from ansible_collections.arista.avd.roles.eos_designs.python_modules.ip_addressing.avdipaddressing import AvdIpAddressing
+from ansible_collections.arista.avd.roles.eos_designs.python_modules.ip_addressing import AvdIpAddressing
 
 if TYPE_CHECKING:
     from .shared_utils import SharedUtils
 
-DEFAULT_AVD_IP_ADDRESSING_PYTHON_MODULE = "ansible_collections.arista.avd.roles.eos_designs.python_modules.ip_addressing"
 DEFAULT_AVD_IP_ADDRESSING_PYTHON_CLASS_NAME = "AvdIpAddressing"
 
 
@@ -66,7 +68,10 @@ class IpAddressingMixin:
         Load the python_module defined in `templates.ip_addressing.python_module`
         Return an instance of the class defined by `templates.ip_addressing.python_class_name` as cached_property
         """
-        module_path = self.ip_addressing_templates.get("python_module", DEFAULT_AVD_IP_ADDRESSING_PYTHON_MODULE)
+        module_path = self.ip_addressing_templates.get("python_module")
+        if module_path is None:
+            return AvdIpAddressing(hostvars=self.hostvars, shared_utils=self)
+
         class_name = self.ip_addressing_templates.get("python_class_name", DEFAULT_AVD_IP_ADDRESSING_PYTHON_CLASS_NAME)
 
         cls = load_python_class(

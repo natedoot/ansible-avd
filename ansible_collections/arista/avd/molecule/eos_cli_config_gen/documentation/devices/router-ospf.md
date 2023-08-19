@@ -63,7 +63,7 @@ interface Ethernet1
    ip ospf network point-to-point
    ip ospf authentication message-digest
    ip ospf area 0.0.0.1
-   ip ospf message-digest-key 55 md5 7 ABCDEFGHIJKLMNOPQRSTUVWXYZ
+   ip ospf message-digest-key 55 md5 7 <removed>
 ```
 
 ### Port-Channel Interfaces
@@ -85,7 +85,7 @@ interface Port-Channel12
    ip ospf area 0.0.0.12
    ip ospf cost 99
    ip ospf authentication message-digest
-   ip ospf message-digest-key 55 md5 7 ABCDEFGHIJKLMNOPQRSTUVWXYZ
+   ip ospf message-digest-key 55 md5 7 <removed>
 ```
 
 ### Loopback Interfaces
@@ -136,7 +136,7 @@ interface Vlan24
    ip ospf area 0.0.0.24
    ip ospf cost 99
    ip ospf authentication message-digest
-   ip ospf message-digest-key 55 md5 7 ABCDEFGHIJKLMNOPQRSTUVWXYZ
+   ip ospf message-digest-key 55 md5 7 <removed>
 ```
 
 ## Routing
@@ -266,6 +266,8 @@ router ospf 101 vrf CUSTOMER01
    summary-address 20.0.0.0/8 tag 10
    summary-address 30.0.0.0/8 attribute-map RM-OSPF_SUMMARY
    summary-address 40.0.0.0/8 not-advertise
+   area 5 not-so-stubby lsa type-7 convert type-5
+
 !
 router ospf 200 vrf ospf_zone
    log-adjacency-changes detail
@@ -275,7 +277,7 @@ router ospf 200 vrf ospf_zone
    area 3 filter prefix-list PL-OSPF-FILTERING
    max-lsa 5
    timers lsa rx min interval 100
-   default-information originate always
+   default-information originate always metric 100 metric-type 1
    redistribute static include leaked route-map rm-ospf-static
    redistribute connected include leaked route-map rm-ospf-connected
    redistribute bgp include leaked route-map rm-ospf-bgp

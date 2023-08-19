@@ -1,9 +1,11 @@
+# Copyright (c) 2023 Arista Networks, Inc.
+# Use of this source code is governed by the Apache License 2.0
+# that can be found in the LICENSE file.
 from __future__ import annotations
 
 from functools import cached_property
 
 from ansible_collections.arista.avd.plugins.plugin_utils.avdfacts import AvdFacts
-from ansible_collections.arista.avd.plugins.plugin_utils.eos_designs_shared_utils import SharedUtils
 from ansible_collections.arista.avd.plugins.plugin_utils.errors import AristaAvdError
 from ansible_collections.arista.avd.plugins.plugin_utils.utils import get
 
@@ -20,18 +22,7 @@ class EosDesignsFacts(AvdFacts, MlagMixin, ShortEsiMixin, OverlayMixin, UplinksM
 
     The class is instantiated once per device. Methods may use references to other device instances using `hostvars.avd_switch_facts`,
     which is a dict of `EosDesignsfacts` instances covering all devices.
-
-    hostvars["switch"] is set to self, to allow `shared_utils` to work the same when they are called from `EosDesignsFacts` or from
-    `AvdStructuredConfig`.
     """
-
-    def __init__(self, hostvars, templar):
-        # Add reference to this instance of EosDesignsFacts object inside hostvars.
-        # This is used to allow templates to access the facts object directly with "switch.*"
-        hostvars["switch"] = self
-
-        shared_utils = SharedUtils(hostvars=hostvars, templar=templar)
-        super().__init__(hostvars=hostvars, shared_utils=shared_utils)
 
     @cached_property
     def id(self) -> int | None:
@@ -159,18 +150,20 @@ class EosDesignsFacts(AvdFacts, MlagMixin, ShortEsiMixin, OverlayMixin, UplinksM
         return None
 
     @cached_property
-    def inband_management_subnet(self) -> str | None:
+    def inband_mgmt_subnet(self) -> str | None:
         """
         Exposed in avd_switch_facts
         """
-        return self.shared_utils.inband_management_subnet
+        if self.shared_utils.configure_parent_for_inband_mgmt:
+            return self.shared_utils.inband_mgmt_subnet
 
     @cached_property
-    def inband_management_vlan(self) -> int | None:
+    def inband_mgmt_vlan(self) -> int | None:
         """
         Exposed in avd_switch_facts
         """
-        return self.shared_utils.inband_management_vlan
+        if self.shared_utils.configure_parent_for_inband_mgmt:
+            return self.shared_utils.inband_mgmt_vlan
 
     @cached_property
     def dc_name(self) -> str | None:

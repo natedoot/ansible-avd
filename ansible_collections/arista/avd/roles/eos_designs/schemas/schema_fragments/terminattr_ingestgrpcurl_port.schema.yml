@@ -5,10 +5,11 @@ type: dict
 keys:
   terminattr_ingestgrpcurl_port:
     documentation_options:
-      filename: Management Settings
-      table: CloudVision Settings
+      table: cloudvision-settings
     type: int
     convert_types:
-    - str
+      - str
     default: 9910
-    description: Port number for Terminattr ingest GRPC
+    description: |-
+      Port number used for Terminattr connection to an on-premise CloudVision cluster.
+      The port number is always 443 when using CloudVision as a Service, so this value is ignored.

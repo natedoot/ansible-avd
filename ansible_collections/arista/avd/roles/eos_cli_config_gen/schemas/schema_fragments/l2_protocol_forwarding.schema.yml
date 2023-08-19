@@ -4,8 +4,6 @@
 type: dict
 keys:
   l2_protocol:
-    documentation_options:
-      filename: data_model/L2 Protocol Forwarding
     type: dict
     keys:
       forwarding_profiles:
@@ -16,7 +14,6 @@ keys:
           keys:
             name:
               type: str
-              required: true
             protocols:
               type: list
               primary_key: name
@@ -25,7 +22,6 @@ keys:
                 keys:
                   name:
                     type: str
-                    required: true
                     valid_values: ["bfd per-link rfc-7130", "e-lmi", "isis", "lacp", "lldp", "macsec", "pause", "stp"]
                   forward:
                     type: bool
