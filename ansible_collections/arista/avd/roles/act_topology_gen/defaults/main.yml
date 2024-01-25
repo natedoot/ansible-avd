@@ -27,6 +27,7 @@ act_cvp_user: "root"
 act_cvp_password: "cvproot"
 act_cvp_instance_type: "singlenode" # Currently the only supported type
 act_cvp_ip: 192.168.0.5
+cvp_auto_configuration: true
 
 # Default ACT configuration file generated
 act_configuration: '{{ lab_topology_dir }}/{{ fabric_name }}-act_inventory.yml'
